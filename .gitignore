@@ -1,0 +1,90 @@
+# =====================================================================
+#  .gitignore - Projet Unreal Engine 5.8
+#  Les binaires de l'éditeur (Binaries/Win64) SONT versionnés pour que
+#  les artistes puissent ouvrir le projet sans Visual Studio.
+# =====================================================================
+
+# --- IDE / outils de dev ---------------------------------------------
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+*.code-workspace
+.ignore
+*.xcworkspace
+*.xcodeproj/
+
+# --- Dossiers générés par Unreal --------------------------------------
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/Receipts/
+*/Build/Receipts/
+
+# Le cache de shaders / DDC local
+*.ddc
+
+# --- Binaires du projet -----------------------------------------------
+# On garde Binaries/Win64 (DLL éditeur + .modules + .target)
+# mais on ignore ce qui est inutile ou propre à chaque machine.
+Binaries/*
+!Binaries/Win64/
+Binaries/Win64/*.pdb
+Binaries/Win64/*.exp
+Binaries/Win64/*.lib
+Binaries/Win64/*.ilk
+Binaries/Win64/*.patch_*
+Binaries/Win64/*.response
+Binaries/Win64/*-????.dll
+Binaries/Win64/*-????.pdb
+Binaries/Win64/*.exe.lnk
+
+# --- Plugins du projet ------------------------------------------------
+Plugins/**/Intermediate/
+Plugins/**/Binaries/*
+!Plugins/**/Binaries/Win64/
+Plugins/**/Binaries/Win64/*.pdb
+Plugins/**/Binaries/Win64/*.exp
+Plugins/**/Binaries/Win64/*.lib
+Plugins/**/Binaries/Win64/*.ilk
+Plugins/**/Binaries/Win64/*.patch_*
+Plugins/**/Binaries/Win64/*-????.dll
+Plugins/**/Binaries/Win64/*-????.pdb
+
+# --- Builds packagés --------------------------------------------------
+Packaged/
+Builds/
+ArchivedBuilds/
+*.pak
+*.ucas
+*.utoc
+
+# --- Fichiers de compilation C++ --------------------------------------
+*.obj
+*.o
+*.pch
+*.gch
+*.slo
+*.lo
+*.idb
+*.tlog
+*.ipch
+
+# --- Fichiers temporaires / OS ----------------------------------------
+*.tmp
+*.log
+*.bak
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Collections et réglages perso de l'éditeur -----------------------
+Content/Collections/*
+!Content/Collections/*.collection
+Content/Developers/
