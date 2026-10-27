@@ -4290,26 +4290,6 @@
 		{
 			"Path": "$(ProjectDir)/Binaries/Win64/UnrealEditor.modules",
 			"Type": "RequiredResource"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/Binaries/Win64/UnrealEditor-ActorPool.dll",
-			"Type": "DynamicLibrary"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/Binaries/Win64/UnrealEditor-ActorPool.pdb",
-			"Type": "SymbolFile"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/Binaries/Win64/UnrealEditor-ActorPoolEditor.dll",
-			"Type": "DynamicLibrary"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/Binaries/Win64/UnrealEditor-ActorPoolEditor.pdb",
-			"Type": "SymbolFile"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/Binaries/Win64/UnrealEditor.modules",
-			"Type": "RequiredResource"
 		}
 	],
 	"RuntimeDependencies": [
@@ -28836,17 +28816,12 @@
 		{
 			"Path": "$(ProjectDir)/CouchGame.uproject",
 			"Type": "UFS"
-		},
-		{
-			"Path": "$(ProjectDir)/Plugins/ActorPoolTool/ActorPool.uplugin",
-			"Type": "UFS"
 		}
 	],
 	"BuildPlugins": [
 		"ACLPlugin",
 		"AISupport",
 		"ActorLayerUtilities",
-		"ActorPool",
 		"ActorSequence",
 		"AdvancedRenamer",
 		"AlembicImporter",
