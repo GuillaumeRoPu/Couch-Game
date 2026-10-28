@@ -42,7 +42,7 @@ void AProtoCameraPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (bAutoFrame)
 	{
-		UpdateFramingTarget(GameMode->ActivePlayerPawns);
+		UpdateFramingTargets(GameMode->ActivePlayerPawns);
 		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));
 		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength,
 									  DeltaTime, FramingInterpSpeed);
@@ -50,84 +50,199 @@ void AProtoCameraPawn::Tick(float DeltaTime)
 }
 
 bool AProtoCameraPawn::PrepareTargetLocations(
-	const TArray<TObjectPtr<AProtoCharacter>>& InActors)
+	const TArray<TObjectPtr<AProtoCharacter>>& InActors, TArray<FVector>& OutTargetLocations)
 {
+	// Keep only live actors and use their average location as the initial framing center.
+	OutTargetLocations.Reset();
+	OutTargetLocations.Reserve(InActors.Num());
 	FVector TargetLocationSum = FVector::ZeroVector;
-	int32 ValidActorCount = 0;
 	for (AProtoCharacter* Actor : InActors)
 	{
 		// UE: IsValid also rejects UObject references that are pending destruction, not just null pointers.
 		if (IsValid(Actor))
 		{
-			TargetLocationSum += Actor->GetActorLocation();
-			++ValidActorCount;
+			const FVector ActorLocation = Actor->GetActorLocation();
+			OutTargetLocations.Add(ActorLocation);
+			TargetLocationSum += ActorLocation;
 		}
 	}
 
-	if (ValidActorCount == 0)
+	if (OutTargetLocations.IsEmpty())
 	{
 		return false;
 	}
 
-	TargetLocation = TargetLocationSum / static_cast<float>(ValidActorCount);
+	TargetLocation = TargetLocationSum / static_cast<float>(OutTargetLocations.Num());
 	return true;
 }
 
-void AProtoCameraPawn::UpdateFramingTarget(const TArray<TObjectPtr<AProtoCharacter>>& InActors)
+void AProtoCameraPawn::UpdateFramingTargets(const TArray<TObjectPtr<AProtoCharacter>>& InActors)
 {
-	//Step by step: void APartyArenaCameraPawn::UpdateFramingTargets(const TArray<TObjectPtr<APartyCharacter>>& InActors)
-	// STEP1: Setup the base variable useful for the whole function: CameraRightVector, CameraUpVector, init max horizontal/vertical spread to 0.
-	if (!PrepareTargetLocations(InActors))
+	// Build the desired camera center and arm length from the current actor group.
+	TArray<FVector> TargetLocations;
+	if (!PrepareTargetLocations(InActors, TargetLocations))
 	{
 		return;
 	}
-	
+
+	const FVector CurrentCameraOffset = Camera->GetComponentLocation() - GetActorLocation();
+	const FVector ArmDirection = CurrentCameraOffset.IsNearlyZero()
+	                             ? -Camera->GetForwardVector()
+	                             : CurrentCameraOffset.GetSafeNormal();
+	const FVector CameraForward = Camera->GetForwardVector();
 	const FVector CameraRight = Camera->GetRightVector();
 	const FVector CameraUp = Camera->GetUpVector();
-	float MaxHorizontalSpread = 0.0f;
-	float MaxVerticalSpread = 0.0f;
-	
-	// STEP2: Find the furthest actor sideways and the furthest actor vertically from center.
-	for (AProtoCharacter* Actor : InActors)
+	float HorizontalLimit = 0.0f;
+	float VerticalLimit = 0.0f;
+	constexpr float ProjectionHalfAngleFactor = 0.5f;
+	CalculateProjectionLimits(CameraForward, HorizontalLimit, VerticalLimit);
+
+	float HorizontalShift = 0.0f;
+	float VerticalShift = 0.0f;
+	float MaxLeftDepthRequirement = 0.0f;
+	float MaxRightDepthRequirement = 0.0f;
+	float MaxBottomDepthRequirement = 0.0f;
+	float MaxTopDepthRequirement = 0.0f;
+	ApplyScreenSpaceFraming(TargetLocations, CameraForward, CameraRight, CameraUp,
+	                        HorizontalLimit, VerticalLimit, ProjectionHalfAngleFactor,
+	                        HorizontalShift, VerticalShift,
+	                        MaxLeftDepthRequirement, MaxRightDepthRequirement,
+	                        MaxBottomDepthRequirement, MaxTopDepthRequirement);
+	UpdateArmLength(ArmDirection, CameraForward, HorizontalLimit, VerticalLimit,
+	                HorizontalShift, VerticalShift, MaxLeftDepthRequirement, MaxRightDepthRequirement,
+	                MaxBottomDepthRequirement, MaxTopDepthRequirement);
+}
+
+void AProtoCameraPawn::CalculateProjectionLimits(const FVector& CameraForward,
+	float& OutHorizontalLimit, float& OutVerticalLimit) const
+{
+	// Derive the screen-space limits from the active viewport, camera projection, and world margin.
+	// Calculate these before recentering; the recentering only changes the camera's right/up axes.
+
+	float AspectRatio = 16.0f / 9.0f;
+	if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
 	{
-	   if (IsValid(Actor))
-	   {
-	      const FVector Offset = Actor->GetActorLocation() - TargetLocation;
-	
-	      // Component of Offset along the camera's right axis, sign discarded (distance only).
-	      MaxHorizontalSpread = FMath::Max(MaxHorizontalSpread, FMath::Abs(FVector::DotProduct(Offset, CameraRight)));
-	
-	      // Same idea, but along the camera's up axis.
-	      MaxVerticalSpread = FMath::Max(MaxVerticalSpread, FMath::Abs(FVector::DotProduct(Offset, CameraUp)));
-	   }
+		const FIntPoint ViewportSize = GEngine->GameViewport->Viewport->GetSizeXY();
+		if (ViewportSize.X > 0 && ViewportSize.Y > 0)
+		{
+			AspectRatio = static_cast<float>(ViewportSize.X) / static_cast<float>(ViewportSize.Y);
+		}
 	}
-	
-	// STEP 3: Create the aspect ratio variable (get it from the cam OR 16/9)
-	const float AspectRatio = Camera->bConstrainAspectRatio && Camera->AspectRatio > 0.0f ? Camera->AspectRatio : 16.f/9.f;
-	
-	// STEP 4: Tan of the half-angle: how much view width the camera covers per unit of distance.
-	const float HorizontalFovTangent = FMath::Tan(FMath::DegreesToRadians(Camera->FieldOfView) * 0.5f);
-	const float VerticalFovTangent = HorizontalFovTangent / AspectRatio;
-	
-	//STEP 5: calculate the RequiredHorizontalArmLength: It's the MaxHorizontalSpread (from the actor loop)+The WorldScreenMargin.X divided by the HorizontalFovTangent.
-	const float RequiredHorizontalArmLength = (MaxHorizontalSpread + WorldScreenMargin.X) / FMath::Max(HorizontalFovTangent, UE_SMALL_NUMBER);
-	
-	//STEP 6: calculate the RequiredVerticalArmLength: It's the MaxVerticalSpread (from the actor loop)+The WorldScreenMargin.Y divided by the VerticalFovTangent.
-	const float RequiredVerticalArmLength = (MaxVerticalSpread + WorldScreenMargin.Y) / FMath::Max(VerticalFovTangent, UE_SMALL_NUMBER);
-	
-	// Step 7: Set the final RequiredArmLength to be the greatest between the RequiredHorizontalArmLength and RequiredVerticalArmLength.
-	// The tighter of the two constraints wins, satisfying it satisfies the other automatically.
-	const float RequiredArmLength = FMath::Max(RequiredHorizontalArmLength, RequiredVerticalArmLength);
-	
-	//Step 8: Secure your TargetArmLenght variable to it respect the MinimumTargetArmLength,MaxArmLength or unlimited arm lenght.
-	const float MinimumTargetArmLength = FMath::Max(MinArmLength, RequiredArmLength);
-	if (MaxArmLength >= 0.0f)
+
+	if (Camera->bConstrainAspectRatio && Camera->AspectRatio > 0.0f)
 	{
-		TargetArmLength = FMath::Min(MinimumTargetArmLength, FMath::Max(MinArmLength, MaxArmLength));
+		AspectRatio = Camera->AspectRatio;
 	}
-	else
+
+	// UE: camera FOV is horizontal, so derive vertical FOV from the current aspect ratio.
+	constexpr float HorizontalFovMinDegrees = 1.0f;
+	constexpr float HorizontalFovMaxDegrees = 179.0f;
+	constexpr float ProjectionHalfAngleFactor = 0.5f;
+	constexpr float ProjectionDiameterFactor = 2.0f;
+	constexpr float MinimumDepth = 0.01f;
+	constexpr float MinimumProjectionFactor = 0.01f;
+	const float HorizontalFovRadians = FMath::DegreesToRadians(
+		FMath::Clamp(Camera->FieldOfView, HorizontalFovMinDegrees, HorizontalFovMaxDegrees));
+	const float HorizontalFovTangent = FMath::Tan(HorizontalFovRadians * ProjectionHalfAngleFactor);
+	const float VerticalFovRadians = ProjectionDiameterFactor
+		* FMath::Atan(HorizontalFovTangent / AspectRatio);
+	const float VerticalFovTangent = FMath::Tan(VerticalFovRadians * ProjectionHalfAngleFactor);
+	// Convert the world-space margin into a screen-space margin at the current depth.
+	const float CurrentCameraDepth = FMath::Max(
+		MinimumDepth, FVector::DotProduct(TargetLocation - Camera->GetComponentLocation(), CameraForward));
+	const float HorizontalHalfExtent = CurrentCameraDepth * HorizontalFovTangent;
+	const float VerticalHalfExtent = CurrentCameraDepth * VerticalFovTangent;
+	const float HorizontalMargin = FMath::Clamp(
+		WorldScreenMargin.X / (ProjectionDiameterFactor * HorizontalHalfExtent), 0.0f, 0.49f);
+	const float VerticalMargin = FMath::Clamp(
+		WorldScreenMargin.Y / (ProjectionDiameterFactor * VerticalHalfExtent), 0.0f, 0.49f);
+
+	// These limits are the maximum screen offset/depth slopes allowed by the projection.
+	OutHorizontalLimit = HorizontalFovTangent * FMath::Max(
+		MinimumProjectionFactor, 1.0f - ProjectionDiameterFactor * HorizontalMargin);
+	OutVerticalLimit = VerticalFovTangent * FMath::Max(
+		MinimumProjectionFactor, 1.0f - ProjectionDiameterFactor * VerticalMargin);
+}
+
+
+void AProtoCameraPawn::ApplyScreenSpaceFraming(const TArray<FVector>& TargetLocations,
+	const FVector& CameraForward, const FVector& CameraRight, const FVector& CameraUp,
+	const float HorizontalLimit, const float VerticalLimit,
+	const float ProjectionHalfAngleFactor,
+	float& OutHorizontalShift, float& OutVerticalShift,
+	float& OutMaxLeftDepthRequirement, float& OutMaxRightDepthRequirement,
+	float& OutMaxBottomDepthRequirement, float& OutMaxTopDepthRequirement)
+{
+	// Find the screen-space center that balances the nearest edge requirements for every actor.
+	// Recenter the group in the camera's 2D plane while accounting for actor depth.
+	float MaxLeftDepthRequirement = TNumericLimits<float>::Lowest();
+	float MaxRightDepthRequirement = TNumericLimits<float>::Lowest();
+	float MaxBottomDepthRequirement = TNumericLimits<float>::Lowest();
+	float MaxTopDepthRequirement = TNumericLimits<float>::Lowest();
+	for (const FVector& ActorLocation : TargetLocations)
 	{
-		TargetArmLength = MinimumTargetArmLength;
+		const FVector PointFromTarget = ActorLocation - TargetLocation;
+		const float PointForwardOffset = FVector::DotProduct(PointFromTarget, CameraForward);
+		const float ScreenX = FVector::DotProduct(PointFromTarget, CameraRight);
+		const float ScreenY = FVector::DotProduct(PointFromTarget, CameraUp);
+
+		// Include depth so the framing remains stable as the camera moves.
+		MaxLeftDepthRequirement = FMath::Max(
+			MaxLeftDepthRequirement,
+			-ScreenX / HorizontalLimit - PointForwardOffset);
+		MaxRightDepthRequirement = FMath::Max(
+			MaxRightDepthRequirement,
+			ScreenX / HorizontalLimit - PointForwardOffset);
+		MaxBottomDepthRequirement = FMath::Max(
+			MaxBottomDepthRequirement,
+			-ScreenY / VerticalLimit - PointForwardOffset);
+		MaxTopDepthRequirement = FMath::Max(
+			MaxTopDepthRequirement,
+			ScreenY / VerticalLimit - PointForwardOffset);
 	}
+
+	// Balance the opposing requirements to find the best screen-space center.
+	OutHorizontalShift =
+		(HorizontalLimit * ProjectionHalfAngleFactor) * (MaxRightDepthRequirement - MaxLeftDepthRequirement);
+	OutVerticalShift =
+		(VerticalLimit * ProjectionHalfAngleFactor) * (MaxTopDepthRequirement - MaxBottomDepthRequirement);
+
+	TargetLocation += CameraRight * OutHorizontalShift;
+	TargetLocation += CameraUp * OutVerticalShift;
+	OutMaxLeftDepthRequirement = MaxLeftDepthRequirement;
+	OutMaxRightDepthRequirement = MaxRightDepthRequirement;
+	OutMaxBottomDepthRequirement = MaxBottomDepthRequirement;
+	OutMaxTopDepthRequirement = MaxTopDepthRequirement;
+}
+
+void AProtoCameraPawn::UpdateArmLength(const FVector& ArmDirection, const FVector& CameraForward,
+	const float HorizontalLimit, const float VerticalLimit, const float HorizontalShift,
+	const float VerticalShift, const float MaxLeftDepthRequirement,
+	const float MaxRightDepthRequirement, const float MaxBottomDepthRequirement,
+	const float MaxTopDepthRequirement)
+{
+	// Convert the framing requirements into a bounded spring-arm target length.
+	// The arm moves opposite the camera's forward vector, so this is depth gained per unit.
+	const float ArmDepthPerUnit = -FVector::DotProduct(ArmDirection, CameraForward);
+	if (ArmDepthPerUnit <= UE_SMALL_NUMBER)
+	{
+		TargetArmLength = MinArmLength;
+		return;
+	}
+
+	const float RequiredHorizontalDepth = FMath::Max(
+		MaxLeftDepthRequirement + HorizontalShift / HorizontalLimit,
+		MaxRightDepthRequirement - HorizontalShift / HorizontalLimit);
+	const float RequiredVerticalDepth = FMath::Max(
+		MaxBottomDepthRequirement + VerticalShift / VerticalLimit,
+		MaxTopDepthRequirement - VerticalShift / VerticalLimit);
+	const float RequiredArmLength = FMath::Max(
+		MinArmLength,
+		FMath::Max(RequiredHorizontalDepth, RequiredVerticalDepth) / ArmDepthPerUnit);
+
+	// A negative maximum means the camera has no upper framing limit.
+	TargetArmLength = MaxArmLength < 0.0f
+		                  ? RequiredArmLength
+		                  : FMath::Min(RequiredArmLength, FMath::Max(MinArmLength, MaxArmLength));
 }
 

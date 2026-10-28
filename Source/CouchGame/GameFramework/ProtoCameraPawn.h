@@ -53,11 +53,42 @@ public:
 	
 	virtual void BeginPlay() override;
 	
-	void UpdateFramingTarget(const TArray<TObjectPtr<AProtoCharacter>>& InActors);
+	void UpdateFramingTargets(const TArray<TObjectPtr<AProtoCharacter>>& InActors);
 
 private:
 	// Filters null or pending-destruction actors, then calculates the average framing center from the rest.
-	bool PrepareTargetLocations(const TArray<TObjectPtr<AProtoCharacter>>& InActors);
+	bool PrepareTargetLocations(const TArray<TObjectPtr<AProtoCharacter>>& InActors,
+	                            TArray<FVector>& OutTargetLocations);
+	// Converts the active viewport and camera projection into horizontal and vertical framing limits.
+	void CalculateProjectionLimits(const FVector& CameraForward,
+	                              float& OutHorizontalLimit,
+	                              float& OutVerticalLimit) const;
+	// Measures screen-space offsets and depth requirements needed to keep all targets within those limits.
+	void ApplyScreenSpaceFraming(const TArray<FVector>& TargetLocations,
+	                            const FVector& CameraForward,
+	                            const FVector& CameraRight,
+	                            const FVector& CameraUp,
+	                            float HorizontalLimit,
+	                            float VerticalLimit,
+	                            float ProjectionHalfAngleFactor,
+	                            float& OutHorizontalShift,
+	                            float& OutVerticalShift,
+	                            float& OutMaxLeftDepthRequirement,
+	                            float& OutMaxRightDepthRequirement,
+	                            float& OutMaxBottomDepthRequirement,
+	                            float& OutMaxTopDepthRequirement);
+	// Applies the calculated center shift and arm-length requirement, subject to the designer's limits.
+	void UpdateArmLength(const FVector& ArmDirection,
+	                    const FVector& CameraForward,
+	                    float HorizontalLimit,
+	                    float VerticalLimit,
+	                    float HorizontalShift,
+	                    float VerticalShift,
+	                    float MaxLeftDepthRequirement,
+	                    float MaxRightDepthRequirement,
+	                    float MaxBottomDepthRequirement,
+	                    float MaxTopDepthRequirement);
+	//The target we will use to move the camera around
 	FVector TargetLocation = FVector::ZeroVector;
 	float TargetArmLength = 1400.0f;
 
