@@ -53,6 +53,15 @@ void AProtoCameraPawn::Tick(float DeltaTime)
 		UpdateFramingTargets(GameMode->ActivePlayerPawns);
 		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));
 		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength, DeltaTime, FramingInterpSpeed);
+		//Computing the new target of the camera based on how far away the characters are with each other
+		TArray<FVector> OutTargetLocations;
+		float Dist = 0;
+		for (int32 i = 0; i < 2; i++)
+		{
+			
+		}
+		FVector NewActorLoc = GetActorLocation() + (0,1 * Dist) * Camera->GetForwardVector();
+		SetActorLocation(NewActorLoc);
 	}
 }
 
@@ -259,6 +268,6 @@ void AProtoCameraPawn::UpdateArmLength(const FVector& ArmDirection, const FVecto
 	// A negative maximum means the camera has no upper framing limit.
 	TargetArmLength = MaxArmLength < 0.0f
 		                  ? RequiredArmLength
-		                  : FMath::Min(RequiredArmLength, FMath::Max(MinArmLength, MaxArmLength));
+		                  : FMath::Min(RequiredArmLength, FMath::Max(MinArmLength, MaxArmLength + 400));
 }
 
