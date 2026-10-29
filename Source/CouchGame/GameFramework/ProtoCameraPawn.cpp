@@ -37,6 +37,14 @@ void AProtoCameraPawn::BeginPlay()
 	GameMode = Cast<AProtoGameMode>(GetWorld()->GetAuthGameMode());
 }
 
+void AProtoCameraPawn::SetCameraRotation(const FRotator* Rotator) const
+{
+	if (Camera)	
+	{
+		Camera->SetRelativeRotation(*Rotator);
+	}
+}
+
 void AProtoCameraPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -44,13 +52,11 @@ void AProtoCameraPawn::Tick(float DeltaTime)
 	{
 		UpdateFramingTargets(GameMode->ActivePlayerPawns);
 		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));
-		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength,
-									  DeltaTime, FramingInterpSpeed);
+		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength, DeltaTime, FramingInterpSpeed);
 	}
 }
 
-bool AProtoCameraPawn::PrepareTargetLocations(
-	const TArray<TObjectPtr<AProtoCharacter>>& InActors, TArray<FVector>& OutTargetLocations)
+bool AProtoCameraPawn::PrepareTargetLocations(const TArray<TObjectPtr<AProtoCharacter>>& InActors, TArray<FVector>& OutTargetLocations)
 {
 	// Keep only live actors and use their average location as the initial framing center.
 	OutTargetLocations.Reset();
@@ -73,6 +79,15 @@ bool AProtoCameraPawn::PrepareTargetLocations(
 	}
 
 	TargetLocation = TargetLocationSum / static_cast<float>(OutTargetLocations.Num());
+	// Y'avait une idée mais vsy c trop dur
+	//float NewDist = FVector::Dist(Camera->GetComponentLocation(), TargetLocation);
+	//int32 It = 0;
+	//for (FVector Loc : OutTargetLocations)
+	//{
+	//	float LocDist = FVector::Dist(Camera->GetComponentLocation(), Loc);
+	//	OutTargetLocations[It] = OutTargetLocations[It] * (LocDist / NewDist);
+	//	It++;
+	//}
 	return true;
 }
 
@@ -89,6 +104,7 @@ void AProtoCameraPawn::UpdateFramingTargets(const TArray<TObjectPtr<AProtoCharac
 	const FVector ArmDirection = CurrentCameraOffset.IsNearlyZero()
 	                             ? -Camera->GetForwardVector()
 	                             : CurrentCameraOffset.GetSafeNormal();
+	// const FVector ArmDirection = CurrentCameraOffset.IsNearlyZero() ? TargetLocation - CurrentCameraOffset : CurrentCameraOffset.GetSafeNormal();
 	const FVector CameraForward = Camera->GetForwardVector();
 	const FVector CameraRight = Camera->GetRightVector();
 	const FVector CameraUp = Camera->GetUpVector();
