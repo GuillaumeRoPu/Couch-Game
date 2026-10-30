@@ -3,6 +3,7 @@
 
 #include "GameFramework/ProtoCameraPawn.h"
 
+#include "KismetTraceUtils.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
 #include "ProtoGameMode.h"
@@ -37,20 +38,71 @@ void AProtoCameraPawn::BeginPlay()
 	GameMode = Cast<AProtoGameMode>(GetWorld()->GetAuthGameMode());
 }
 
+void AProtoCameraPawn::SetCameraRotation(const FRotator* Rotator) const
+{
+	if (Camera)	
+	{
+		Camera->SetRelativeRotation(*Rotator);
+	}
+}
+
 void AProtoCameraPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (bAutoFrame)
 	{
 		UpdateFramingTargets(GameMode->ActivePlayerPawns);
-		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));
-		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength,
-									  DeltaTime, FramingInterpSpeed);
+		// SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));*
+		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength, DeltaTime, FramingInterpSpeed);
+		
+		//Computing the new target of the camera based on how far away the characters are from each other
+		
+		TArray<FVector> OutTargetLocations;
+		FVector NewActorLoc = TargetLocation;
+		for (AProtoCharacter* Actor : GameMode->ActivePlayerPawns)
+        {
+        	// UE: IsValid also rejects UObject references that are pending destruction, not just null pointers.
+        	if (IsValid(Actor))
+        	{
+        		const FVector ActorLocation = Actor->GetActorLocation();
+        		OutTargetLocations.Add(ActorLocation);
+        	}
+        }
+		if (!OutTargetLocations.IsEmpty() && OutTargetLocations.Num() > 1)
+		{
+			FVector NewCameraForward = FVector(Camera->GetForwardVector().X, Camera->GetForwardVector().Y, 0);
+			NewCameraForward.Normalize();
+			float Dist = 0;
+			FVector VerticalHighestLoc = OutTargetLocations[0];
+			float VerticalHighestDist = FVector::Dist(VerticalHighestLoc, Camera->GetComponentLocation());
+			FVector VerticalLowestLoc = OutTargetLocations[0];
+			float VerticalLowestDist = VerticalHighestDist;
+			for (int32 i = 0; i < OutTargetLocations.Num(); i++)
+			{
+				if (float const TempDist = FVector::Dist(OutTargetLocations[i], Camera->GetComponentLocation()) > VerticalHighestDist && VerticalHighestLoc != OutTargetLocations[i])
+				{
+					VerticalHighestLoc = OutTargetLocations[i];
+					VerticalHighestDist = TempDist;
+				}
+				else if (float const TempDist2 = FVector::Dist(OutTargetLocations[i], Camera->GetComponentLocation()) < VerticalLowestDist && VerticalLowestLoc != OutTargetLocations[i])
+				{
+					VerticalLowestLoc = OutTargetLocations[i];
+					VerticalLowestDist = TempDist2;
+				}
+			}
+			Dist = FVector::DotProduct(VerticalHighestLoc - VerticalLowestLoc, NewCameraForward);
+			// FHitResult Tung;
+			// DrawDebugLineTraceSingle(this->GetWorld(), VerticalLowestLoc, VerticalHighestLoc, EDrawDebugTrace::ForOneFrame, false, Tung, FLinearColor::Red, FLinearColor::Green, 0.0f);
+			float ArmLengthCoef = FMath::Lerp(0.f, 1.f, FMath::Clamp(static_cast<float>((SpringArm->TargetArmLength - MinArmLength) / (MaxArmLength - MinArmLength)), 0.f, 1.f));
+			NewActorLoc = NewActorLoc + FVector(((0.1f * Dist) * -NewCameraForward).X, ((0.1f * Dist) * -NewCameraForward).Y, 0) * ArmLengthCoef;
+			// UE_LOG(LogTemp, Log, TEXT("The float value is: %f"), TargetArmLength);
+		}
+		
+		SetActorLocation(FMath::VInterpTo(GetActorLocation(), NewActorLoc, DeltaTime, FramingInterpSpeed));
 	}
 }
 
-bool AProtoCameraPawn::PrepareTargetLocations(
-	const TArray<TObjectPtr<AProtoCharacter>>& InActors, TArray<FVector>& OutTargetLocations)
+bool AProtoCameraPawn::PrepareTargetLocations(const TArray<TObjectPtr<AProtoCharacter>>& InActors, TArray<FVector>& OutTargetLocations)
 {
 	// Keep only live actors and use their average location as the initial framing center.
 	OutTargetLocations.Reset();
@@ -73,6 +125,15 @@ bool AProtoCameraPawn::PrepareTargetLocations(
 	}
 
 	TargetLocation = TargetLocationSum / static_cast<float>(OutTargetLocations.Num());
+	// Y'avait une idée mais vsy c trop dur
+	//float NewDist = FVector::Dist(Camera->GetComponentLocation(), TargetLocation);
+	//int32 It = 0;
+	//for (FVector Loc : OutTargetLocations)
+	//{
+	//	float LocDist = FVector::Dist(Camera->GetComponentLocation(), Loc);
+	//	OutTargetLocations[It] = OutTargetLocations[It] * (LocDist / NewDist);
+	//	It++;
+	//}
 	return true;
 }
 
@@ -89,6 +150,7 @@ void AProtoCameraPawn::UpdateFramingTargets(const TArray<TObjectPtr<AProtoCharac
 	const FVector ArmDirection = CurrentCameraOffset.IsNearlyZero()
 	                             ? -Camera->GetForwardVector()
 	                             : CurrentCameraOffset.GetSafeNormal();
+	// const FVector ArmDirection = CurrentCameraOffset.IsNearlyZero() ? TargetLocation - CurrentCameraOffset : CurrentCameraOffset.GetSafeNormal();
 	const FVector CameraForward = Camera->GetForwardVector();
 	const FVector CameraRight = Camera->GetRightVector();
 	const FVector CameraUp = Camera->GetUpVector();
@@ -152,8 +214,10 @@ void AProtoCameraPawn::CalculateProjectionLimits(const FVector& CameraForward,
 		MinimumDepth, FVector::DotProduct(TargetLocation - Camera->GetComponentLocation(), CameraForward));
 	const float HorizontalHalfExtent = CurrentCameraDepth * HorizontalFovTangent;
 	const float VerticalHalfExtent = CurrentCameraDepth * VerticalFovTangent;
+	
 	const float HorizontalMargin = FMath::Clamp(
 		WorldScreenMargin.X / (ProjectionDiameterFactor * HorizontalHalfExtent), 0.0f, 0.49f);
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("World delta for current frame equals %f"), HorizontalMargin));
 	const float VerticalMargin = FMath::Clamp(
 		WorldScreenMargin.Y / (ProjectionDiameterFactor * VerticalHalfExtent), 0.0f, 0.49f);
 
@@ -243,6 +307,6 @@ void AProtoCameraPawn::UpdateArmLength(const FVector& ArmDirection, const FVecto
 	// A negative maximum means the camera has no upper framing limit.
 	TargetArmLength = MaxArmLength < 0.0f
 		                  ? RequiredArmLength
-		                  : FMath::Min(RequiredArmLength, FMath::Max(MinArmLength, MaxArmLength));
+		                  : FMath::Min(RequiredArmLength, FMath::Max(MinArmLength, MaxArmLength + 400));
 }
 

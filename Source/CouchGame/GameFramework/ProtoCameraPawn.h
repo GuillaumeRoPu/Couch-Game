@@ -53,6 +53,8 @@ public:
 	
 	virtual void BeginPlay() override;
 	
+	void SetCameraRotation(const FRotator* rotator) const;
+	
 	void UpdateFramingTargets(const TArray<TObjectPtr<AProtoCharacter>>& InActors);
 
 private:
