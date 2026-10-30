@@ -30,3 +30,9 @@ void AProtoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+bool AProtoCharacter::TryTakeDamage_Implementation(const float Damage, const FHitResult HitResult)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Taken damage"));
+	return true;
+}
+
