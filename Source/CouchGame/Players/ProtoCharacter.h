@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Interface/DamageableInterface.h"
+#include "LifeComponent.h"
 #include "ProtoCharacter.generated.h"
 
 UCLASS()
@@ -31,5 +32,5 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Couch|Player",
 	meta = (ToolTip = "Life component that tracks this character's health and death state."))
-	TObjectPtr<class UPartyLifeComponent> LifeComponent;
+	TObjectPtr<class ULifeComponent> LifeComponent;
 };
