@@ -3,6 +3,7 @@
 
 #include "GameFramework/ProtoCameraPawn.h"
 
+#include "KismetTraceUtils.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
 #include "ProtoGameMode.h"
@@ -51,17 +52,53 @@ void AProtoCameraPawn::Tick(float DeltaTime)
 	if (bAutoFrame)
 	{
 		UpdateFramingTargets(GameMode->ActivePlayerPawns);
-		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));
+		// SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FramingInterpSpeed));*
 		SpringArm->TargetArmLength = FMath::FInterpTo(SpringArm->TargetArmLength, TargetArmLength, DeltaTime, FramingInterpSpeed);
-		//Computing the new target of the camera based on how far away the characters are with each other
+		
+		//Computing the new target of the camera based on how far away the characters are from each other
+		
 		TArray<FVector> OutTargetLocations;
-		float Dist = 0;
-		for (int32 i = 0; i < 2; i++)
+		FVector NewActorLoc = TargetLocation;
+		for (AProtoCharacter* Actor : GameMode->ActivePlayerPawns)
+        {
+        	// UE: IsValid also rejects UObject references that are pending destruction, not just null pointers.
+        	if (IsValid(Actor))
+        	{
+        		const FVector ActorLocation = Actor->GetActorLocation();
+        		OutTargetLocations.Add(ActorLocation);
+        	}
+        }
+		if (!OutTargetLocations.IsEmpty() && OutTargetLocations.Num() > 1)
 		{
-			
+			FVector NewCameraForward = FVector(Camera->GetForwardVector().X, Camera->GetForwardVector().Y, 0);
+			NewCameraForward.Normalize();
+			float Dist = 0;
+			FVector VerticalHighestLoc = OutTargetLocations[0];
+			float VerticalHighestDist = FVector::Dist(VerticalHighestLoc, Camera->GetComponentLocation());
+			FVector VerticalLowestLoc = OutTargetLocations[0];
+			float VerticalLowestDist = VerticalHighestDist;
+			for (int32 i = 0; i < OutTargetLocations.Num(); i++)
+			{
+				if (float const TempDist = FVector::Dist(OutTargetLocations[i], Camera->GetComponentLocation()) > VerticalHighestDist && VerticalHighestLoc != OutTargetLocations[i])
+				{
+					VerticalHighestLoc = OutTargetLocations[i];
+					VerticalHighestDist = TempDist;
+				}
+				else if (float const TempDist2 = FVector::Dist(OutTargetLocations[i], Camera->GetComponentLocation()) < VerticalLowestDist && VerticalLowestLoc != OutTargetLocations[i])
+				{
+					VerticalLowestLoc = OutTargetLocations[i];
+					VerticalLowestDist = TempDist2;
+				}
+			}
+			Dist = FVector::DotProduct(VerticalHighestLoc - VerticalLowestLoc, NewCameraForward);
+			// FHitResult Tung;
+			// DrawDebugLineTraceSingle(this->GetWorld(), VerticalLowestLoc, VerticalHighestLoc, EDrawDebugTrace::ForOneFrame, false, Tung, FLinearColor::Red, FLinearColor::Green, 0.0f);
+			float ArmLengthCoef = FMath::Lerp(0.f, 1.f, FMath::Clamp(static_cast<float>((SpringArm->TargetArmLength - MinArmLength) / (MaxArmLength - MinArmLength)), 0.f, 1.f));
+			NewActorLoc = NewActorLoc + FVector(((0.1f * Dist) * -NewCameraForward).X, ((0.1f * Dist) * -NewCameraForward).Y, 0) * ArmLengthCoef;
+			// UE_LOG(LogTemp, Log, TEXT("The float value is: %f"), TargetArmLength);
 		}
-		FVector NewActorLoc = GetActorLocation() + (0,1 * Dist) * Camera->GetForwardVector();
-		SetActorLocation(NewActorLoc);
+		
+		SetActorLocation(FMath::VInterpTo(GetActorLocation(), NewActorLoc, DeltaTime, FramingInterpSpeed));
 	}
 }
 
@@ -177,8 +214,10 @@ void AProtoCameraPawn::CalculateProjectionLimits(const FVector& CameraForward,
 		MinimumDepth, FVector::DotProduct(TargetLocation - Camera->GetComponentLocation(), CameraForward));
 	const float HorizontalHalfExtent = CurrentCameraDepth * HorizontalFovTangent;
 	const float VerticalHalfExtent = CurrentCameraDepth * VerticalFovTangent;
+	
 	const float HorizontalMargin = FMath::Clamp(
 		WorldScreenMargin.X / (ProjectionDiameterFactor * HorizontalHalfExtent), 0.0f, 0.49f);
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("World delta for current frame equals %f"), HorizontalMargin));
 	const float VerticalMargin = FMath::Clamp(
 		WorldScreenMargin.Y / (ProjectionDiameterFactor * VerticalHalfExtent), 0.0f, 0.49f);
 
