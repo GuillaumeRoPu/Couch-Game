@@ -23,9 +23,14 @@ void ULifeComponent::BeginPlay()
 	
 }
 
+void ULifeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+}
+
 
 void ULifeComponent::ApplyDamage(float Damage, AController* Instigator, AActor* DamageCauser,
-	const FHitResult& HitResult)
+                                 const FHitResult& HitResult)
 {
 }
 

@@ -4,6 +4,7 @@
 #include "ProtoCharacter.h"
 
 
+
 // Sets default values
 AProtoCharacter::AProtoCharacter()
 {
