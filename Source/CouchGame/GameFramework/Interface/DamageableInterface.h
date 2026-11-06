@@ -22,5 +22,5 @@ class COUCHGAME_API IDamageableInterface
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Custom|Damage")
-	bool TryTakeDamage(float Damage, FHitResult HitResult);
+	bool TryTakeDamage(float Damage, float RagdollPushForce, FHitResult HitResult);
 };

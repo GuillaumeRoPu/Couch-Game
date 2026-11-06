@@ -28,7 +28,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	virtual bool TryTakeDamage_Implementation(float Damage, FHitResult HitResult) override;
+	virtual bool TryTakeDamage_Implementation(float Damage, float RagdollPushForce, FHitResult HitResult) override;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Couch|Player",
 	meta = (ToolTip = "Life component that tracks this character's health and death state."))

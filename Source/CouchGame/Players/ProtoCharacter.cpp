@@ -2,7 +2,7 @@
 
 
 #include "ProtoCharacter.h"
-
+#include "LifeComponent.h"
 
 
 // Sets default values
@@ -10,6 +10,7 @@ AProtoCharacter::AProtoCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	LifeComponent = CreateDefaultSubobject<ULifeComponent>(TEXT("LifeComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -31,9 +32,16 @@ void AProtoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-bool AProtoCharacter::TryTakeDamage_Implementation(const float Damage, const FHitResult HitResult)
+bool AProtoCharacter::TryTakeDamage_Implementation(const float Damage, float RagdollPushForce, const FHitResult HitResult)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Taken damage"));
+	if (Damage <= 0.0f)
+	{
+		return false;
+	}
+	
+	LifeComponent->ApplyDamage(Damage, nullptr, nullptr, RagdollPushForce, HitResult);
 	return true;
+
 }
 

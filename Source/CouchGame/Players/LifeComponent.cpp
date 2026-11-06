@@ -3,6 +3,15 @@
 
 #include "Players/LifeComponent.h"
 
+#include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/CollisionProfile.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
+
 // Sets default values for this component's properties
 ULifeComponent::ULifeComponent()
 {
@@ -18,9 +27,7 @@ ULifeComponent::ULifeComponent()
 void ULifeComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	CurrentLifePoints = GetNormalizedMaxLifePoints();
 }
 
 void ULifeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -29,16 +36,83 @@ void ULifeComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 
-void ULifeComponent::ApplyDamage(float Damage, AController* Instigator, AActor* DamageCauser,
-                                 const FHitResult& HitResult)
+void ULifeComponent::ApplyDamage(float Damage, AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FHitResult& HitResult)
 {
+	if (Damage <= 0.0f || bIsDead)
+	{
+		return;
+	}
+	CurrentLifePoints = FMath::Clamp(CurrentLifePoints - Damage, 0.0f, GetNormalizedMaxLifePoints());
+	OnDamageTaken.Broadcast(Damage, CurrentLifePoints, Instigator, DamageCauser);
+	if (CurrentLifePoints <= 0.0f)
+	{
+		bIsDead = true;
+		ApplyDeath(Instigator, DamageCauser, RagdollPushForce, FPartyDamageContext{Instigator, DamageCauser, HitResult.ImpactPoint, HitResult.ImpactNormal});
+	}
 }
 
-// Called every frame
-void ULifeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+float ULifeComponent::GetNormalizedMaxLifePoints() const
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	return FMath::Max(MinimumLifePoints, MaxLifePoints);
+}
 
-	// ...
+
+// Applies the character death presentation before notifying Blueprint and other listeners.
+void ULifeComponent::ApplyDeath(AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FPartyDamageContext& Context)
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		PlayDeathAudio(Character);
+		ApplyRagdoll(Character, Context, RagdollPushForce);
+	}
+	OnDied.Broadcast(Character, Instigator, DamageCauser, Context);
+}
+
+void ULifeComponent::PlayDeathAudio(const ACharacter* Character) const
+{
+	if (DeathSFX && GetWorld())
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSFX, Character->GetActorLocation(), 1.0f, FMath::FRandRange(0.8f, 1.2f));
+	}
+}
+
+void ULifeComponent::ApplyRagdoll(ACharacter* Character, const FPartyDamageContext& Context, const float RagdollPushForce) const
+{
+	Character->GetCharacterMovement()->StopMovementImmediately();
+	Character->GetCharacterMovement()->DisableMovement();
+	Character->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	USkeletalMeshComponent* Mesh = Character->GetMesh();
+	// UE: physics simulation requires a collision mode that supports physics bodies.
+	Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
+	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Mesh->SetAllBodiesSimulatePhysics(true);
+	Mesh->WakeAllRigidBodies();
+	if (!Context.ImpactNormal.IsNearlyZero())
+	{
+		const FVector Impulse = -Context.ImpactNormal * RagdollPushForce;
+		const FVector ImpactPoint = Context.ImpactPoint.IsNearlyZero()
+			? Character->GetActorLocation()
+			: Context.ImpactPoint;
+		Mesh->AddImpulseToAllBodiesBelow(Impulse, Mesh->GetBoneName(0), false, true);
+	}
+}
+
+// Restores life and reverses the movement, collision, and physics changes made by death.
+void ULifeComponent::ResetLife()
+{
+	bIsDead = false;
+	CurrentLifePoints = GetNormalizedMaxLifePoints();
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		USkeletalMeshComponent* Mesh = Character->GetMesh();
+		Character->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		Mesh->SetAllBodiesSimulatePhysics(false);
+		Mesh->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
+		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+	OnLifeReset.Broadcast(Character, CurrentLifePoints);
 }
 

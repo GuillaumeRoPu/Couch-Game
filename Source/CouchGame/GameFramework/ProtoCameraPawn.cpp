@@ -217,7 +217,6 @@ void AProtoCameraPawn::CalculateProjectionLimits(const FVector& CameraForward,
 	
 	const float HorizontalMargin = FMath::Clamp(
 		WorldScreenMargin.X / (ProjectionDiameterFactor * HorizontalHalfExtent), 0.0f, 0.49f);
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("World delta for current frame equals %f"), HorizontalMargin));
 	const float VerticalMargin = FMath::Clamp(
 		WorldScreenMargin.Y / (ProjectionDiameterFactor * VerticalHalfExtent), 0.0f, 0.49f);
 
