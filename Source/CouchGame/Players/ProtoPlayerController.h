@@ -13,4 +13,7 @@ UCLASS()
 class COUCHGAME_API AProtoPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+	
+protected:
+	virtual void OnPossess(APawn* InPawn) override;
 };

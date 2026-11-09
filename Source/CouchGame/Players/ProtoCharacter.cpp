@@ -4,6 +4,7 @@
 #include "ProtoCharacter.h"
 
 
+
 // Sets default values
 AProtoCharacter::AProtoCharacter()
 {
@@ -28,5 +29,11 @@ void AProtoCharacter::Tick(float DeltaTime)
 void AProtoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+bool AProtoCharacter::TryTakeDamage_Implementation(const float Damage, const FHitResult HitResult)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Taken damage"));
+	return true;
 }
 
