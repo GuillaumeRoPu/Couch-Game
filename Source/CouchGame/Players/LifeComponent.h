@@ -58,6 +58,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Life") bool IsDead() const { return bIsDead; }
 	/** Restores life points and the owning character's movement and collision state after death. */
 	UFUNCTION(BlueprintCallable, Category = "Life") void ResetLife();
+	void RetireForRespawn(float RetireDelay);
 	void ApplyDamage(float Damage, AController* Instigator = nullptr, AActor* DamageCauser = nullptr, const float RagdollPushForce = 0.f, const FHitResult& HitResult = FHitResult());
 
 private:
