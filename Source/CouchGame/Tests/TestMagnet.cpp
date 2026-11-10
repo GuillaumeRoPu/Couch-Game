@@ -32,3 +32,11 @@ void UTestMagnet::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 	// ...
 }
 
+#if WITH_EDITOR
+
+void UTestMagnet::test()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1000.f, FColor::Red, FString::Printf(TEXT("WOOOOOW")));
+	//DrawDebugCone()
+}
+#endif
