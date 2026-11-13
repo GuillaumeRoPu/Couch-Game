@@ -8,7 +8,7 @@
 
 
 USTRUCT(BlueprintType)
-struct COUCHGAME_API FPartyDamageContext
+struct COUCHGAME_API FCouchDamageContext
 {
 	GENERATED_BODY()
 
@@ -19,9 +19,9 @@ struct COUCHGAME_API FPartyDamageContext
 };
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FPartyDamageTaken, float, Damage, float, RemainingLife, AController*, Instigator, AActor*, DamageCauser);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPartyLifeReset, ACharacter*, Character, float, NewLifePoints);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FPartyDied, ACharacter*, Character, AController*, Instigator, AActor*, DamageCauser, FPartyDamageContext, Context);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FCouchDamageTaken, float, Damage, float, RemainingLife, AController*, Instigator, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCouchLifeReset, ACharacter*, Character, float, NewLifePoints);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FCouchDied, ACharacter*, Character, AController*, Instigator, AActor*, DamageCauser, FCouchDamageContext, Context);
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -50,9 +50,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life|Effects")
 	TObjectPtr<USoundBase> DeathSFX;
 
-	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FPartyDamageTaken OnDamageTaken;
-	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FPartyDied OnDied;
-	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FPartyLifeReset OnLifeReset;
+	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FCouchDamageTaken OnDamageTaken;
+	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FCouchDied OnDied;
+	UPROPERTY(BlueprintAssignable, Category = "Life|Events") FCouchLifeReset OnLifeReset;
 
 	
 	UFUNCTION(BlueprintPure, Category = "Life") bool IsDead() const { return bIsDead; }
@@ -64,8 +64,8 @@ public:
 private:
 	float GetNormalizedMaxLifePoints() const;
 	void PlayDeathAudio(const ACharacter* Character) const;
-	void ApplyRagdoll(ACharacter* Character, const FPartyDamageContext&, const float RagdollPushForce) const;
-	void ApplyDeath(AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FPartyDamageContext& Context);
+	void ApplyRagdoll(ACharacter* Character, const FCouchDamageContext&, const float RagdollPushForce) const;
+	void ApplyDeath(AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FCouchDamageContext& Context);
 	static constexpr float MinimumLifePoints = 0.01f;
 	bool bIsDead = false;
 };

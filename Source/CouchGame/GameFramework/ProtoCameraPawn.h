@@ -26,7 +26,7 @@ public:
 	TObjectPtr<UCameraComponent> Camera;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Smart Camera",
-		meta = (ToolTip = "Automatically adjusts the camera framing to keep the party in view."))
+		meta = (ToolTip = "Automatically adjusts the camera framing to keep the players in view."))
 	bool bAutoFrame = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Smart Camera",
@@ -41,7 +41,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Smart Camera",
 		meta = (ClampMin = "0.0", EditCondition = "bAutoFrame", EditConditionHides,
-			ToolTip = "Horizontal and vertical world-space margins kept around the framed party."))
+			ToolTip = "Horizontal and vertical world-space margins kept around the framed players."))
 	FVector2D WorldScreenMargin = FVector2D(150.0f, 200.0f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Smart Camera",

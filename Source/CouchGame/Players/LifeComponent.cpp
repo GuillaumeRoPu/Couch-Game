@@ -47,7 +47,7 @@ void ULifeComponent::ApplyDamage(float Damage, AController* Instigator, AActor* 
 	if (CurrentLifePoints <= 0.0f)
 	{
 		bIsDead = true;
-		ApplyDeath(Instigator, DamageCauser, RagdollPushForce, FPartyDamageContext{Instigator, DamageCauser, HitResult.ImpactPoint, HitResult.ImpactNormal});
+		ApplyDeath(Instigator, DamageCauser, RagdollPushForce, FCouchDamageContext{Instigator, DamageCauser, HitResult.ImpactPoint, HitResult.ImpactNormal});
 	}
 }
 
@@ -58,7 +58,7 @@ float ULifeComponent::GetNormalizedMaxLifePoints() const
 
 
 // Applies the character death presentation before notifying Blueprint and other listeners.
-void ULifeComponent::ApplyDeath(AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FPartyDamageContext& Context)
+void ULifeComponent::ApplyDeath(AController* Instigator, AActor* DamageCauser, const float RagdollPushForce, const FCouchDamageContext& Context)
 {
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
 	if (Character)
@@ -77,7 +77,7 @@ void ULifeComponent::PlayDeathAudio(const ACharacter* Character) const
 	}
 }
 
-void ULifeComponent::ApplyRagdoll(ACharacter* Character, const FPartyDamageContext& Context, const float RagdollPushForce) const
+void ULifeComponent::ApplyRagdoll(ACharacter* Character, const FCouchDamageContext& Context, const float RagdollPushForce) const
 {
 	Character->GetCharacterMovement()->StopMovementImmediately();
 	Character->GetCharacterMovement()->DisableMovement();
