@@ -45,7 +45,7 @@ public:
 	float DeadPawnLifetime = 5.0f;
 	
 	UFUNCTION()
-	void OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FPartyDamageContext Context);
+	void OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context);
 	
 protected:
 	virtual void BeginPlay() override;

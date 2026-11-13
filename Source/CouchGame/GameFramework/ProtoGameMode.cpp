@@ -56,17 +56,17 @@ void AProtoGameMode::CreateNewPlayer(AController* PlayerController)
 	RestartPlayer(PlayerController);
 }
 
-void AProtoGameMode::OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FPartyDamageContext Context)
+void AProtoGameMode::OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context)
 {
-	if (AProtoCharacter* PartyCharacter = Cast<AProtoCharacter>(Character))
+	if (AProtoCharacter* CouchCharacter = Cast<AProtoCharacter>(Character))
 	{
-		PartyCharacter->LifeComponent->OnDied.RemoveDynamic(this, &AProtoGameMode::OnPlayerDied);
+		CouchCharacter->LifeComponent->OnDied.RemoveDynamic(this, &AProtoGameMode::OnPlayerDied);
 		
-		ActivePlayerPawns.Remove(PartyCharacter);
+		ActivePlayerPawns.Remove(CouchCharacter);
 
 		if (bRespawnOnDeath)
 		{
-			if (AController* PlayerController = PartyCharacter->GetController())
+			if (AController* PlayerController = CouchCharacter->GetController())
 			{
 				if (RespawnDelay <= 0.0f)
 				{
@@ -80,12 +80,12 @@ void AProtoGameMode::OnPlayerDied(ACharacter* Character, AController* DamageInst
 					GetWorldTimerManager().SetTimer(RespawnTimerHandle, RespawnDelegate,RespawnDelay,false);
 				}
 			}
-			if (IsValid(PartyCharacter))
+			if (IsValid(CouchCharacter))
 			{
 				const float MinimumRagdollLifetime = bRespawnOnDeath ? RespawnDelay : 0.0f;
 				const float RagdollLifetime = FMath::Max(DeadPawnLifetime, MinimumRagdollLifetime);
-				PartyCharacter->LifeComponent->RetireForRespawn(RagdollLifetime);
-				PartyCharacter = nullptr;
+				CouchCharacter->LifeComponent->RetireForRespawn(RagdollLifetime);
+				CouchCharacter = nullptr;
 			}
 		}
 	}
