@@ -116,3 +116,26 @@ void ULifeComponent::ResetLife()
 	OnLifeReset.Broadcast(Character, CurrentLifePoints);
 }
 
+void ULifeComponent::RetireForRespawn(const float RetireDelay)
+{
+	AActor* Owner = GetOwner();
+	if (!bIsDead || !Owner)
+	{
+		return;
+	}
+
+	if (ACharacter* Character = Cast<ACharacter>(Owner))
+	{
+		// Keep simulated bodies active; NoCollision is incompatible with a live ragdoll.
+		Character->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	}
+
+	if (RetireDelay > 0.0f)
+	{
+		Owner->SetLifeSpan(RetireDelay);
+	}
+	else
+	{
+		Owner->Destroy();
+	}
+}
