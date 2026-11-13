@@ -18,6 +18,7 @@ class COUCHGAME_API UCouchGameViewportClient : public UGameViewportClient
 public:
 	virtual void Init(FWorldContext& WorldContext, UGameInstance* OwningGameInstance, bool bCreateNewAudioDevice) override;
 	virtual bool InputKey(const FInputKeyEventArgs& EventArgs) override;
+	virtual bool InputAxis(const FInputKeyEventArgs& EventArgs) override;
 	
 private:
 	UPROPERTY(Transient)
@@ -31,5 +32,6 @@ private:
 	static bool IsKeyboardRoutingKey(const FKey& Key);
 	static bool RouteInputToController(APlayerController* PlayerController, const FInputKeyEventArgs& EventArgs);
 	
+	bool RouteGamepadInput(const FInputKeyEventArgs& EventArgs, bool bNotifyUnclaimedDevice) const;
 	bool RouteKeyboardInput(const FInputKeyEventArgs& EventArgs) const;
 };

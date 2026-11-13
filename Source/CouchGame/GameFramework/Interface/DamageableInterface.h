@@ -21,6 +21,12 @@ class COUCHGAME_API IDamageableInterface
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Custom|Damage")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Couch|Damage")
 	bool TryTakeDamage(float Damage, float RagdollPushForce, FHitResult HitResult);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Couch|Currency")
+	bool TryCollectCurrency(int32 Amount);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Couch|Currency")
+	bool TryRemoveCurrency(int32 Amount);
 };

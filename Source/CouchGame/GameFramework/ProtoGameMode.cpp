@@ -4,6 +4,7 @@
 #include "ProtoGameMode.h"
 
 #include "ProtoGameHUD.h"
+#include "Backend/Subsystem/CouchLobbySubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Players/ProtoPlayerState.h"
 #include "Players/ProtoPlayerController.h"
@@ -20,24 +21,59 @@ AProtoGameMode::AProtoGameMode()
 void AProtoGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	// Player index 0 is normally created automatically.
-	// Create player index 1 and immediately spawn its pawn.
-	if (GetWorld())
+	
+	if (UGameInstance* GameInstance = GetGameInstance())
 	{
-		UGameplayStatics::CreatePlayer(GetWorld(), 1, true);
+		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
+		{
+			const int32 ExtraPlayersToCreate = LobbySubsystem->GetJoinedPlayerCount() - 1;
+			for (int32 PlayerIndex = 0; PlayerIndex < ExtraPlayersToCreate; ++PlayerIndex)
+			{
+				// -1 lets the engine assign the next available controller id. Controller id and
+				// Couch player index are independent, the lobby ties a local player to a Couch
+				// slot, not this id, so it doesn't matter which id lands where.
+				UGameplayStatics::CreatePlayer(GetWorld(), -1, true);
+			}
+		}
 	}
-	//Disable the split screen for now, we will manage it later
+
+	//Disable the split screen
 	GetGameInstance()->GetGameViewportClient()->SetForceDisableSplitscreen(true);;
 }
 
 void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
 {
 	Super::FinishRestartPlayer(NewPlayer, StartRotation);
-	
-	if (AProtoCharacter* Character = Cast<AProtoCharacter>(NewPlayer->GetPawn()))
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(NewPlayer))
 	{
-		ActivePlayerPawns.AddUnique(Character);
-		Character->LifeComponent->OnDied.AddUniqueDynamic(this, &AProtoGameMode::OnPlayerDied);
+		if (AProtoCharacter* Character = Cast<AProtoCharacter>(PlayerController->GetPawn()))
+		{
+			ActivePlayerPawns.AddUnique(Character);
+			Character->LifeComponent->OnDied.AddUniqueDynamic(this, &AProtoGameMode::OnPlayerDied);
+			
+			AProtoPlayerState* ProtoPlayerState = Character->GetCouchPlayerState();
+			
+			if (!ProtoPlayerState)
+			{
+				return;
+			}
+
+			UGameInstance* GameInstance = GetGameInstance();
+			UCouchLobbySubsystem* LobbySubsystem = GameInstance
+				? GameInstance->GetSubsystem<UCouchLobbySubsystem>()
+				: nullptr;
+			if (!LobbySubsystem)
+			{
+				return;
+			}
+
+			int32 CouchPlayerIndex = INDEX_NONE;
+			if (LobbySubsystem->ClaimNextUnassignedLocalPlayer(PlayerController->GetLocalPlayer(), CouchPlayerIndex))
+			{
+				ProtoPlayerState->SetCouchPlayerIndex(CouchPlayerIndex);
+			}
+		}
 	}
 }
 

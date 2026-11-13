@@ -58,19 +58,20 @@ private:
 	int32 FindFreeCouchPlayerIndex() const;
 	bool TryClaimInputSource(ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId, int32& OutCouchPlayerIndex);
 	
-	void ApplyInputMappingForPlayerIndex(int32 PartyPlayerIndex, ULocalPlayer* LocalPlayer);
+	void ApplyInputMappingForPlayerIndex(int32 CouchPlayerIndex, ULocalPlayer* LocalPlayer);
 
 	UPROPERTY(Transient)
 	TMap<int32, TWeakObjectPtr<ULocalPlayer>> PlayerIndexLocalPlayers;
 
+	TMap<int32, int32> GamepadDeviceToPlayerIndex;
 	
 public:
 	bool NotifyKeyboardSchemeInput(ECouchInputScheme Scheme, const FKey& Key, FInputDeviceId Device);
 	
 	APlayerController* GetPlayerControllerForScheme(ECouchInputScheme Scheme) const;
 	
-	bool ClaimNextUnassignedLocalPlayer(ULocalPlayer* LocalPlayer, int32& OutPartyPlayerIndex);
-	APlayerController* GetPlayerControllerForPlayerIndex(int32 PartyPlayerIndex) const;
+	bool ClaimNextUnassignedLocalPlayer(ULocalPlayer* LocalPlayer, int32& OutCouchPlayerIndex);
+	APlayerController* GetPlayerControllerForPlayerIndex(int32 CouchPlayerIndex) const;
 
 
 	UFUNCTION(BlueprintCallable, Category = "Couch|Lobby")
@@ -93,4 +94,7 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Couch|Lobby")
 	FOnCouchPlayerJoined OnCouchPlayerJoined;
+	
+	bool NotifyGamepadInput(const FKey& Key, FInputDeviceId Device);
+	APlayerController* GetPlayerControllerForGamepadDevice(int32 DeviceId) const;
 };

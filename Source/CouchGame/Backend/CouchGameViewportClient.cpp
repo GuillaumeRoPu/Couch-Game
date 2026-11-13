@@ -12,13 +12,20 @@ void UCouchGameViewportClient::Init(FWorldContext& WorldContext, UGameInstance* 
 	EnsureSchemeKeysBuilt();
 }
 
-// Override. Called on EVERY input. Here, we filter through all inputs to find only the ones we want from the schemes we implemented in dev settings. Once they're filtered, we send the appropriate schemes to the lobby so each scheme can get claimed.
+// Override. Called on EVERY Key input. Here, we filter through all inputs to find only the ones we want from the schemes we implemented in dev settings. Once they're filtered, we send the appropriate schemes to the lobby so each scheme can get claimed.
 bool UCouchGameViewportClient::InputKey(const FInputKeyEventArgs& EventArgs)
 {
-	// Temporary, only handles keyboard inputs for now
 	EnsureSchemeKeysBuilt();
 	if (RouteKeyboardInput(EventArgs)) return true;
+	if (EventArgs.Key.IsGamepadKey() && EventArgs.Key.IsButtonAxis() && RouteGamepadInput(EventArgs, true)) return true;
 	return Super::InputKey(EventArgs);
+}
+
+// Override. Called on EVERY Axis input. Here, we filter through all inputs to find only the ones we want from the schemes we implemented in dev settings.
+bool UCouchGameViewportClient::InputAxis(const FInputKeyEventArgs& EventArgs)
+{
+	if (EventArgs.Key.IsGamepadKey() && RouteGamepadInput(EventArgs, false)) return true;
+	return Super::InputAxis(EventArgs);
 }
 
 // Tells you if the key is a keyboard button (like A, &, (, R, shift, etc etc)
@@ -29,7 +36,7 @@ bool UCouchGameViewportClient::IsKeyboardRoutingKey(const FKey& Key)
 		&& !Key.IsAxis1D() && !Key.IsAxis2D() && !Key.IsAxis3D() && !Key.IsGesture();
 }
 
-// When given a player controller, says to said player controller that an input (here EventArgs) has been done
+// When given a player controller, says to said player controller that an input (here EventArgs) has been done so it can act (or not) on this input
 bool UCouchGameViewportClient::RouteInputToController(APlayerController* PlayerController, const FInputKeyEventArgs& EventArgs)
 {
 	if (!PlayerController) return true;
@@ -54,7 +61,10 @@ bool UCouchGameViewportClient::RouteKeyboardInput(const FInputKeyEventArgs& Even
 
 		if (APlayerController* PlayerController = LobbySubsystem->GetPlayerControllerForScheme(Scheme))
 		{
-			return RouteInputToController(PlayerController, EventArgs);
+			if (!LobbySubsystem->IsJoiningOpen())
+			{
+				return RouteInputToController(PlayerController, EventArgs);
+			}
 		}
 
 		return LobbySubsystem->NotifyKeyboardSchemeInput(Scheme, EventArgs.Key, EventArgs.InputDevice);
@@ -93,4 +103,23 @@ void UCouchGameViewportClient::EnsureSchemeKeysBuilt()
 		}
 	}
 	bSchemeKeysBuilt = true;
+}
+
+//Same thing as RouteKeyboardInput but for gamepads. We separate the 2 of them since gamepads aren't stored the same way as keyboard schemes.
+bool UCouchGameViewportClient::RouteGamepadInput(const FInputKeyEventArgs& EventArgs, bool bNotifyUnclaimedDevice) const
+{
+	if (LobbySubsystem)
+	{
+		if (APlayerController* PlayerController = LobbySubsystem->GetPlayerControllerForGamepadDevice(EventArgs.InputDevice.GetId()))
+		{
+			return RouteInputToController(PlayerController, EventArgs);
+		}
+
+		if (bNotifyUnclaimedDevice)
+		{
+			LobbySubsystem->NotifyGamepadInput(EventArgs.Key, EventArgs.InputDevice);
+		}
+	}
+
+	return true;
 }

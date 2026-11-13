@@ -176,3 +176,33 @@ void UCouchLobbySubsystem::ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputS
 
 	OnCouchPlayerJoined.Broadcast(CouchPlayerIndex, Scheme, SchemeMapping, Key, DeviceId);
 }
+
+//Whenever this is called, it claims the input source with the DeviceId to differentiate each gamepad from one another
+bool UCouchLobbySubsystem::NotifyGamepadInput(const FKey& Key, FInputDeviceId Device)
+{
+	const int32 DeviceId = Device.GetId();
+	if (GamepadDeviceToPlayerIndex.Contains(DeviceId))
+	{
+		return false;
+	}
+
+	int32 ClaimedPlayerIndex = INDEX_NONE;
+	if (TryClaimInputSource(ECouchInputScheme::Gamepad_Xbox, Key, DeviceId, ClaimedPlayerIndex))
+	{
+		GamepadDeviceToPlayerIndex.Add(DeviceId, ClaimedPlayerIndex);
+	}
+
+	return false;
+}
+
+//Gets the player controller connected with the given deviceId if it is found in GamepadDeviceToPlayerIndex
+APlayerController* UCouchLobbySubsystem::GetPlayerControllerForGamepadDevice(int32 DeviceId) const
+{
+	const int32* CouchPlayerIndex = GamepadDeviceToPlayerIndex.Find(DeviceId);
+	if (CouchPlayerIndex)
+	{
+		return GetPlayerControllerForPlayerIndex(*CouchPlayerIndex);
+	}
+
+	return nullptr;
+}
