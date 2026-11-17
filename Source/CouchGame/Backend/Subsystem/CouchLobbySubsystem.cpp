@@ -206,3 +206,23 @@ APlayerController* UCouchLobbySubsystem::GetPlayerControllerForGamepadDevice(int
 
 	return nullptr;
 }
+
+#if WITH_EDITOR
+bool UCouchLobbySubsystem::EnsurePIEPlayers()
+{
+	if (GetJoinedPlayerCount() > 0)
+	{
+		return GetJoinedPlayerCount() >= 2;
+	}
+
+	UE_LOG(LogCouchLobby, Warning, TEXT("[PIE DIRECT START] Creating fake inputs for editor testing: synthetic KeyboardA -> Player1 and KeyboardB -> Player2 joins will be created. No physical input was received."));
+
+	ClaimedKeyboardSchemes.Add(ECouchInputScheme::KeyboardA);
+	ClaimPlayerIndex(0, ECouchInputScheme::KeyboardA, FKey(), INDEX_NONE);
+
+	ClaimedKeyboardSchemes.Add(ECouchInputScheme::KeyboardB);
+	ClaimPlayerIndex(1, ECouchInputScheme::KeyboardB, FKey(), INDEX_NONE);
+
+	return GetJoinedPlayerCount() >= 2;
+}
+#endif
