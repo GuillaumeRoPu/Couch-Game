@@ -44,11 +44,16 @@ public:
 	   meta = (ClampMin = "0.0", EditCondition = "bRespawnOnDeath"))
 	float DeadPawnLifetime = 5.0f;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Couch|EditorOnly")
+	bool bConnectOnEditor = false;
+	
 	UFUNCTION()
 	void OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context);
 	
 protected:
 	virtual void BeginPlay() override;
+	
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	
 	/* Called whenever the player finishes spawning, we use it  */
 	virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;

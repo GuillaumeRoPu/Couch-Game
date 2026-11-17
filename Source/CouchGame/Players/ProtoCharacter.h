@@ -35,11 +35,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	// Attempts to add coins to this character's Couch player state.
+	// Attempts to add Currency to this character's Couch player state.
 	virtual bool TryCollectCurrency_Implementation(const int32 Amount) override;
-	// Attempts to remove coins from this character's Couch player state.
+	// Attempts to remove Currency from this character's Couch player state.
 	virtual bool TryRemoveCurrency_Implementation(const int32 Amount) override;
-	// Removes the requested coins, then applies the supplied life damage.
+	// Removes the requested Currency, then applies the supplied life damage.
 	virtual bool TryTakeDamage_Implementation(float Damage, float RagdollPushForce, FHitResult HitResult) override;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Couch|Player",

@@ -97,4 +97,8 @@ public:
 	
 	bool NotifyGamepadInput(const FKey& Key, FInputDeviceId Device);
 	APlayerController* GetPlayerControllerForGamepadDevice(int32 DeviceId) const;
+	
+#if WITH_EDITOR
+	bool EnsurePIEPlayers();
+#endif
 };
