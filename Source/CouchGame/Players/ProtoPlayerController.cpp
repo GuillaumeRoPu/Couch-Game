@@ -13,5 +13,7 @@ void AProtoPlayerController::OnPossess(APawn* InPawn)
 	if (TActorIterator<AProtoCameraPawn> It(GetWorld()); It)
 	{
 		SetViewTarget(*It);
+		GEngine->AddOnScreenDebugMessage(-1, 1000.f, FColor::Red, FString::Printf(TEXT("PawnGotPossessed")));
+
 	}
 }

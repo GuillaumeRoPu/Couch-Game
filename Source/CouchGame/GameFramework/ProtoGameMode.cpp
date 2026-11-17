@@ -18,6 +18,28 @@ AProtoGameMode::AProtoGameMode()
 	HUDClass = AProtoGameHUD::StaticClass();
 }
 
+void AProtoGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+
+#if WITH_EDITOR
+	if (!bConnectOnEditor)
+	{
+		return;
+	}
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
+		{
+			if (LobbySubsystem->GetJoinedPlayerCount() == 0)
+			{
+				LobbySubsystem->EnsurePIEPlayers();
+			}
+		}
+	}
+#endif
+}
+
 void AProtoGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -73,6 +95,15 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 			{
 				ProtoPlayerState->SetCouchPlayerIndex(CouchPlayerIndex);
 			}
+			// Only use code below if you want to delete extra players that don't get registered, basically preventing the spawn of characters over the max player limit. Buggy since it also deletes characters that don't have an IMC yet
+			//else
+			//{
+			//	if (!LobbySubsystem->IsPlayerIndexClaimed(ProtoPlayerState->GetCouchPlayerIndex()))
+			//	{
+			//		PlayerController->GetPawn()->Destroy();
+			//		PlayerController->UnPossess();
+			//	}
+			//}
 		}
 	}
 }

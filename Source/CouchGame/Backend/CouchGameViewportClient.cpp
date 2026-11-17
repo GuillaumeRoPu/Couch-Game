@@ -17,7 +17,7 @@ bool UCouchGameViewportClient::InputKey(const FInputKeyEventArgs& EventArgs)
 {
 	EnsureSchemeKeysBuilt();
 	if (RouteKeyboardInput(EventArgs)) return true;
-	if (EventArgs.Key.IsGamepadKey() && EventArgs.Key.IsButtonAxis() && RouteGamepadInput(EventArgs, true)) return true;
+	if (EventArgs.Key.IsGamepadKey() && !EventArgs.Key.IsButtonAxis() && RouteGamepadInput(EventArgs, true)) return true;
 	return Super::InputKey(EventArgs);
 }
 
