@@ -14,6 +14,5 @@ void AProtoPlayerController::OnPossess(APawn* InPawn)
 	{
 		SetViewTarget(*It);
 		GEngine->AddOnScreenDebugMessage(-1, 1000.f, FColor::Red, FString::Printf(TEXT("PawnGotPossessed")));
-
 	}
 }
