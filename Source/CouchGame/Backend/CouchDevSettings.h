@@ -54,4 +54,9 @@ public:
 	//Avatars for the players. Each avatar is ordered the same way players are
 	UPROPERTY(EditAnywhere, Config, Category = "Avatars", meta = (TitleProperty = "AvatarId"))
 	TArray<TSoftObjectPtr<UCouchPlayerAvatarData>> Avatars;
+	
+	//Main Map
+	UPROPERTY(EditAnywhere, Config, Category = "Game Flow")
+	TSoftObjectPtr<UWorld> MainMap;
+
 };
