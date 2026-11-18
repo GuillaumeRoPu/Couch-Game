@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "InputMappingContext.h"
 #include "Engine/DeveloperSettings.h"
+#include "Players/CouchPlayerAvatarData.h"
 #include "CouchDevSettings.generated.h"
 
 class UWorld;
@@ -49,4 +50,8 @@ public:
 	
 	UPROPERTY(EditAnywhere, Config, Category = "Input Schemes")
 	TArray<FCouchInputSchemeMapping> InputSchemeMappings;
+	
+	//Avatars for the players. Each avatar is ordered the same way players are
+	UPROPERTY(EditAnywhere, Config, Category = "Avatars", meta = (TitleProperty = "AvatarId"))
+	TArray<TSoftObjectPtr<UCouchPlayerAvatarData>> Avatars;
 };

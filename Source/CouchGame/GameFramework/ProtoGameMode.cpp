@@ -82,9 +82,7 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 			}
 
 			UGameInstance* GameInstance = GetGameInstance();
-			UCouchLobbySubsystem* LobbySubsystem = GameInstance
-				? GameInstance->GetSubsystem<UCouchLobbySubsystem>()
-				: nullptr;
+			UCouchLobbySubsystem* LobbySubsystem = GameInstance ? GameInstance->GetSubsystem<UCouchLobbySubsystem>() : nullptr;
 			if (!LobbySubsystem)
 			{
 				return;
@@ -104,6 +102,25 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 			//		PlayerController->UnPossess();
 			//	}
 			//}
+			
+			
+			//Here we set every single things we need to apply on the player from dev settings Avatar Data
+			CouchPlayerIndex = ProtoPlayerState->GetCouchPlayerIndex();
+			if (UCouchPlayerAvatarData* Avatar = LobbySubsystem->GetAvatarForPlayerIndex(CouchPlayerIndex))
+			{
+				if (USkeletalMesh* AvatarMesh = Avatar->LoadSkeletalMesh())
+				{
+					Character->GetMesh()->SetSkeletalMesh(AvatarMesh);
+					if (UAnimBlueprint* ABP = Avatar->LoadAnimationBlueprint())
+					{
+						Character->GetMesh()->SetAnimInstanceClass(ABP->GeneratedClass);
+					}
+				}
+				if (UMagnetComponent* MagnetComponent = Character->GetComponentByClass<UMagnetComponent>())
+				{
+					//MagnetComponent
+				}
+			}
 		}
 	}
 }
