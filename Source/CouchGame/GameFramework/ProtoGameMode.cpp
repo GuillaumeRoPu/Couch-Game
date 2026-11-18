@@ -5,7 +5,9 @@
 
 #include "ProtoGameHUD.h"
 #include "Backend/Subsystem/CouchLobbySubsystem.h"
+#include "Components/DecalComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMaterialLibrary.h"
 #include "Players/ProtoPlayerState.h"
 #include "Players/ProtoPlayerController.h"
 #include "Players/ProtoCharacter.h"
@@ -111,6 +113,7 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				if (USkeletalMesh* AvatarMesh = Avatar->LoadSkeletalMesh())
 				{
 					Character->GetMesh()->SetSkeletalMesh(AvatarMesh);
+					Character->GetMesh()->SetCustomDepthStencilValue(100 + CouchPlayerIndex);
 					if (UAnimBlueprint* ABP = Avatar->LoadAnimationBlueprint())
 					{
 						Character->GetMesh()->SetAnimInstanceClass(ABP->GeneratedClass);
@@ -118,7 +121,14 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				}
 				if (UMagnetComponent* MagnetComponent = Character->GetComponentByClass<UMagnetComponent>())
 				{
-					//MagnetComponent
+					MagnetComponent->PowerType = Avatar->MagnetPowerType;
+				}
+				if (UDecalComponent* DecalComponent = Character->GetComponentByClass<UDecalComponent>())
+				{
+					UMaterialInstanceDynamic* MI = UKismetMaterialLibrary::CreateDynamicMaterialInstance(GetWorld(), DecalComponent->GetDecalMaterial());
+					MI->SetVectorParameterValue(TEXT("Color"), Avatar->DropShadowColor);
+					DecalComponent->SetDecalMaterial(MI);
+					GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("HELP"));
 				}
 			}
 		}

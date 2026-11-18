@@ -32,7 +32,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Presentation", meta = (AssetBundles = "Game", ToolTip = "Animation Blueprint to make the skeletal mesh move"))
 	TSoftObjectPtr<UAnimBlueprint> AnimationBlueprintLibrary;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet powers use by this player avatar"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Presentation", meta = (ToolTip = "Color for the drop shadow of the avatar"))
+	FLinearColor DropShadowColor;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet powers used by this player avatar"))
 	E_MagnetPowerType MagnetPowerType;
 
 	// Loads the soft reference of the Icon Texture2D for this player
