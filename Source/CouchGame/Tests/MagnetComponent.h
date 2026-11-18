@@ -57,15 +57,21 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	E_MagnetPowerType PowerType = E_MagnetPowerType::ATTRACT;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
+	TArray<TSubclassOf<AActor>> TargetClasses;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	float Power = 20.0f;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 private:
 	bool HasObject = false;
+	TArray<AActor*> Objects;
 	AActor* OtherActor = nullptr;
+	
 	
 		
 };
