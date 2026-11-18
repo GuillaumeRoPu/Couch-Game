@@ -55,13 +55,16 @@ public:
 	
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
-	E_MagnetPowerType PowerType = E_MagnetPowerType::ATTRACT;
+	E_MagnetPowerType PowerType = E_MagnetPowerType::REPULSE;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
 	TArray<TSubclassOf<AActor>> TargetClasses;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	float Power = 20.0f;
+	
+	UPROPERTY(BlueprintReadWrite)
+	FVector ActionDirection = FVector(0.0f, 0.0f, 0.0f);
 
 protected:
 	// Called when the game starts
@@ -72,6 +75,4 @@ private:
 	TArray<AActor*> Objects;
 	AActor* OtherActor = nullptr;
 	
-	
-		
 };
