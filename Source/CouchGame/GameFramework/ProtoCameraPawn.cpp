@@ -26,7 +26,7 @@ AProtoCameraPawn::AProtoCameraPawn()
 	SpringArm->CameraLagSpeed = FramingInterpSpeed;
 	SpringArm->TargetArmLength = TargetArmLength;
 
-	Camera->FieldOfView = 65.0f;
+	Camera->FieldOfView = 100.0f;
 
 	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 }
