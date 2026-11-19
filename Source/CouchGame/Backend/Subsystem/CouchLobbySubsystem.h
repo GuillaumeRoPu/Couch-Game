@@ -27,16 +27,20 @@ struct COUCHGAME_API FCouchPlayerInfo
 
 	UPROPERTY(BlueprintReadOnly, Category = "Couch|Player")
 	int32 DeviceId = INDEX_NONE;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Couch|Player")
+	TObjectPtr<UCouchPlayerAvatarData> Avatar = nullptr;
 };
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnCouchPlayerJoined,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnCouchPlayerJoined,
 	int32, CouchPlayerIndex,
 	ECouchInputScheme, Scheme,
 	FCouchInputSchemeMapping, SchemeMapping,
 	FKey, TriggerKey,
-	int32, DeviceId);
-
+	int32, DeviceId,
+	UCouchPlayerAvatarData*, Avatar
+	);
 
 
 /**
@@ -97,6 +101,7 @@ public:
 	
 	bool NotifyGamepadInput(const FKey& Key, FInputDeviceId Device);
 	APlayerController* GetPlayerControllerForGamepadDevice(int32 DeviceId) const;
+	UCouchPlayerAvatarData* GetAvatarForPlayerIndex(int32 PartyPlayerIndex) const;
 	
 #if WITH_EDITOR
 	bool EnsurePIEPlayers();
