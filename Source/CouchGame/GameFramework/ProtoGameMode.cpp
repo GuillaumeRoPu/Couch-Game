@@ -4,6 +4,10 @@
 #include "ProtoGameMode.h"
 
 #include "ProtoGameHUD.h"
+#include "Backend/Subsystem/CouchLobbySubsystem.h"
+#include "Components/DecalComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMaterialLibrary.h"
 #include "Players/ProtoPlayerState.h"
 #include "Players/ProtoPlayerController.h"
 #include "Players/ProtoCharacter.h"
@@ -14,4 +18,170 @@ AProtoGameMode::AProtoGameMode()
 	PlayerControllerClass = AProtoPlayerController::StaticClass();
 	PlayerStateClass = AProtoPlayerState::StaticClass();
 	HUDClass = AProtoGameHUD::StaticClass();
+}
+
+void AProtoGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+
+#if WITH_EDITOR
+	if (!bConnectOnEditor)
+	{
+		return;
+	}
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
+		{
+			if (LobbySubsystem->GetJoinedPlayerCount() == 0)
+			{
+				LobbySubsystem->EnsurePIEPlayers();
+			}
+		}
+	}
+#endif
+}
+
+void AProtoGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
+		{
+			const int32 ExtraPlayersToCreate = LobbySubsystem->GetJoinedPlayerCount() - 1;
+			for (int32 PlayerIndex = 0; PlayerIndex < ExtraPlayersToCreate; ++PlayerIndex)
+			{
+				// -1 lets the engine assign the next available controller id. Controller id and
+				// Couch player index are independent, the lobby ties a local player to a Couch
+				// slot, not this id, so it doesn't matter which id lands where.
+				UGameplayStatics::CreatePlayer(GetWorld(), -1, true);
+			}
+		}
+	}
+
+	//Disable the split screen
+	GetGameInstance()->GetGameViewportClient()->SetForceDisableSplitscreen(true);;
+}
+
+void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
+{
+	Super::FinishRestartPlayer(NewPlayer, StartRotation);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(NewPlayer))
+	{
+		if (AProtoCharacter* Character = Cast<AProtoCharacter>(PlayerController->GetPawn()))
+		{
+			ActivePlayerPawns.AddUnique(Character);
+			Character->LifeComponent->OnDied.AddUniqueDynamic(this, &AProtoGameMode::OnPlayerDied);
+			
+			AProtoPlayerState* ProtoPlayerState = Character->GetCouchPlayerState();
+			
+			if (!ProtoPlayerState)
+			{
+				return;
+			}
+
+			UGameInstance* GameInstance = GetGameInstance();
+			UCouchLobbySubsystem* LobbySubsystem = GameInstance ? GameInstance->GetSubsystem<UCouchLobbySubsystem>() : nullptr;
+			if (!LobbySubsystem)
+			{
+				return;
+			}
+
+			int32 CouchPlayerIndex = INDEX_NONE;
+			if (LobbySubsystem->ClaimNextUnassignedLocalPlayer(PlayerController->GetLocalPlayer(), CouchPlayerIndex))
+			{
+				ProtoPlayerState->SetCouchPlayerIndex(CouchPlayerIndex);
+			}
+			// Only use code below if you want to delete extra players that don't get registered, basically preventing the spawn of characters over the max player limit. Buggy since it also deletes characters that don't have an IMC yet
+			//else
+			//{
+			//	if (!LobbySubsystem->IsPlayerIndexClaimed(ProtoPlayerState->GetCouchPlayerIndex()))
+			//	{
+			//		PlayerController->GetPawn()->Destroy();
+			//		PlayerController->UnPossess();
+			//	}
+			//}
+			
+			
+			//Here we set every single things we need to apply on the player from dev settings Avatar Data
+			CouchPlayerIndex = ProtoPlayerState->GetCouchPlayerIndex();
+			if (UCouchPlayerAvatarData* Avatar = LobbySubsystem->GetAvatarForPlayerIndex(CouchPlayerIndex))
+			{
+				if (USkeletalMesh* AvatarMesh = Avatar->LoadSkeletalMesh())
+				{
+					Character->GetMesh()->SetSkeletalMesh(AvatarMesh);
+					Character->GetMesh()->SetCustomDepthStencilValue(100 + CouchPlayerIndex);
+					if (UAnimBlueprint* ABP = Avatar->LoadAnimationBlueprint())
+					{
+						Character->GetMesh()->SetAnimInstanceClass(ABP->GeneratedClass);
+					}
+				}
+				if (UMagnetComponent* MagnetComponent = Character->GetComponentByClass<UMagnetComponent>())
+				{
+					MagnetComponent->PowerType = Avatar->MagnetPowerType;
+					MagnetComponent->CollisionType = Avatar->CollisionType;
+				}
+				if (UDecalComponent* DecalComponent = Character->GetComponentByClass<UDecalComponent>())
+				{
+					UMaterialInstanceDynamic* MI = UKismetMaterialLibrary::CreateDynamicMaterialInstance(GetWorld(), DecalComponent->GetDecalMaterial());
+					MI->SetVectorParameterValue(TEXT("Color"), Avatar->DropShadowColor);
+					DecalComponent->SetDecalMaterial(MI);
+					GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("HELP"));
+				}
+			}
+		}
+	}
+}
+
+void AProtoGameMode::CreateNewPlayer(AController* PlayerController)
+{
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (APawn* DeadPawn = PlayerController->GetPawn())
+	{
+		PlayerController->UnPossess();
+	}
+	
+	RestartPlayer(PlayerController);
+}
+
+void AProtoGameMode::OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context)
+{
+	if (AProtoCharacter* CouchCharacter = Cast<AProtoCharacter>(Character))
+	{
+		CouchCharacter->LifeComponent->OnDied.RemoveDynamic(this, &AProtoGameMode::OnPlayerDied);
+		
+		ActivePlayerPawns.Remove(CouchCharacter);
+
+		if (bRespawnOnDeath)
+		{
+			if (AController* PlayerController = CouchCharacter->GetController())
+			{
+				if (RespawnDelay <= 0.0f)
+				{
+					CreateNewPlayer(PlayerController);
+				}
+				else
+				{
+					FTimerHandle RespawnTimerHandle;
+					FTimerDelegate RespawnDelegate;
+					RespawnDelegate.BindUObject(this,&AProtoGameMode::CreateNewPlayer,PlayerController);
+					GetWorldTimerManager().SetTimer(RespawnTimerHandle, RespawnDelegate,RespawnDelay,false);
+				}
+			}
+			if (IsValid(CouchCharacter))
+			{
+				const float MinimumRagdollLifetime = bRespawnOnDeath ? RespawnDelay : 0.0f;
+				const float RagdollLifetime = FMath::Max(DeadPawnLifetime, MinimumRagdollLifetime);
+				CouchCharacter->LifeComponent->RetireForRespawn(RagdollLifetime);
+				CouchCharacter = nullptr;
+			}
+		}
+	}
 }
