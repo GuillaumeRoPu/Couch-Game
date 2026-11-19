@@ -122,6 +122,7 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				if (UMagnetComponent* MagnetComponent = Character->GetComponentByClass<UMagnetComponent>())
 				{
 					MagnetComponent->PowerType = Avatar->MagnetPowerType;
+					MagnetComponent->CollisionType = Avatar->CollisionType;
 				}
 				if (UDecalComponent* DecalComponent = Character->GetComponentByClass<UDecalComponent>())
 				{
