@@ -123,6 +123,12 @@ APlayerController* UCouchLobbySubsystem::GetPlayerControllerForPlayerIndex(int32
 	return nullptr;
 }
 
+//
+UCouchPlayerAvatarData* UCouchLobbySubsystem::GetAvatarForPlayerIndex(int32 CouchPlayerIndex) const
+{
+	const FCouchPlayerInfo* PlayerInfo = JoinedPlayers.Find(CouchPlayerIndex);
+	return PlayerInfo ? PlayerInfo->Avatar.Get() : nullptr;
+}
 
 //Opens joining the lobby for players
 void UCouchLobbySubsystem::OpenJoining()
@@ -170,11 +176,15 @@ void UCouchLobbySubsystem::ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputS
 	PlayerInfo.SchemeMapping = SchemeMapping;
 	PlayerInfo.TriggerKey = Key;
 	PlayerInfo.DeviceId = DeviceId;
+	const TArray<TSoftObjectPtr<UCouchPlayerAvatarData>>& ConfiguredAvatars = GetDefault<UCouchDevSettings>()->Avatars;
+	if (ConfiguredAvatars.IsValidIndex(CouchPlayerIndex))
+	{
+		PlayerInfo.Avatar = ConfiguredAvatars[CouchPlayerIndex].LoadSynchronous();
+	}
 	JoinedPlayers.Add(CouchPlayerIndex, PlayerInfo);
 
-	UE_LOG(LogCouchLobby, Log, TEXT("Player joined - CouchPlayerIndex=%d, Scheme=%d, Key=%s, DeviceId=%d"), CouchPlayerIndex, static_cast<int32>(Scheme), *Key.ToString(), DeviceId);
-
-	OnCouchPlayerJoined.Broadcast(CouchPlayerIndex, Scheme, SchemeMapping, Key, DeviceId);
+	UE_LOG(LogCouchLobby, Log, TEXT("Player joined - CouchPlayerIndex=%d, Scheme=%d, Key=%s, DeviceId=%d, Avatar=%s"), CouchPlayerIndex, static_cast<int32>(Scheme), *Key.ToString(), DeviceId, PlayerInfo.Avatar ? *PlayerInfo.Avatar->GetName() : TEXT("None"));
+	OnCouchPlayerJoined.Broadcast(CouchPlayerIndex, Scheme, SchemeMapping, Key, DeviceId, PlayerInfo.Avatar.Get());
 }
 
 //Whenever this is called, it claims the input source with the DeviceId to differentiate each gamepad from one another
