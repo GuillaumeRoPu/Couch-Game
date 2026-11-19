@@ -87,6 +87,7 @@ void ULifeComponent::ApplyRagdoll(ACharacter* Character, const FCouchDamageConte
 	Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Mesh->SetAllBodiesSimulatePhysics(true);
+	Mesh->SetSimulatePhysics(true);
 	Mesh->WakeAllRigidBodies();
 	if (!Context.ImpactNormal.IsNearlyZero())
 	{
