@@ -9,6 +9,7 @@ void UCouchGameViewportClient::Init(FWorldContext& WorldContext, UGameInstance* 
 	Super::Init(WorldContext, OwningGameInstance, bCreateNewAudioDevice);
 	LobbySubsystem = OwningGameInstance ? OwningGameInstance->GetSubsystem<UCouchLobbySubsystem>() : nullptr;
 	GameFlowSubsystem = OwningGameInstance ? OwningGameInstance->GetSubsystem<UCouchGameFlowSubsystem>() : nullptr;
+	InputSubsystem = OwningGameInstance ? OwningGameInstance->GetSubsystem<UCouchInputSubsystem>() : nullptr;
 	
 	EnsureSchemeKeysBuilt();
 }
