@@ -6,6 +6,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Backend/CouchDevSettings.h" 
 #include "CouchLobbySubsystem.h"
+#include "GameFramework/ProtoGameMode.h"
 #include "CouchGameFlowSubsystem.generated.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCouchGameFlow, Log, All);
@@ -26,6 +27,7 @@ enum class ETransitionExecutionMode : uint8
 	Normal,
 	DirectPIE,
 	SessionReset,
+	DirectGameplay,
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCouchGameFlowStateChanged, ECouchGameFlowState, OldState, ECouchGameFlowState, NewState);
@@ -46,6 +48,8 @@ public:
 	ECouchGameFlowState GetCurrentState() const { return CurrentState; }
 	
 	bool RequestTransition(ECouchGameFlowState NewState);
+	
+	void OnGameModeBeginPlay(AProtoGameMode* GM);
 
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;

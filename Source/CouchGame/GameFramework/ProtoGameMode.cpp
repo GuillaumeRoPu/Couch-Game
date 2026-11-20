@@ -46,6 +46,8 @@ void AProtoGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	GetGameInstance()->GetSubsystem<UCouchGameFlowSubsystem>()->OnGameModeBeginPlay(this);
+	
 	if (UGameInstance* GameInstance = GetGameInstance())
 	{
 		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
