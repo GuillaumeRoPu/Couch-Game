@@ -63,6 +63,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	float Power = 20.0f;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	bool isPowerConstant = false;
+	
 	UPROPERTY(BlueprintReadWrite)
 	FVector ActionDirection = FVector(0.0f, 0.0f, 0.0f);
 
