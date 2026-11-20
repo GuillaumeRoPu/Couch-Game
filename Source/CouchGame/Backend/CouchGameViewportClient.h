@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameViewportClient.h"
+#include "Subsystem/CouchGameFlowSubsystem.h"
+#include "Subsystem/CouchInputSubsystem.h"
 #include "Subsystem/CouchLobbySubsystem.h"
 #include "CouchGameViewportClient.generated.h"
 
@@ -23,6 +25,12 @@ public:
 private:
 	UPROPERTY(Transient)
 	TObjectPtr<UCouchLobbySubsystem> LobbySubsystem = nullptr;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UCouchGameFlowSubsystem> GameFlowSubsystem = nullptr;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UCouchInputSubsystem> InputSubsystem = nullptr;
 	
 	static constexpr int32 KeyboardSchemeCount = 2;
 	TArray<TSet<FKey>> SchemeKeys;
