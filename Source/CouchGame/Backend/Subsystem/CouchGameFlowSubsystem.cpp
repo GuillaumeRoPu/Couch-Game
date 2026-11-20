@@ -74,4 +74,13 @@ bool UCouchGameFlowSubsystem::RequestTransition(ECouchGameFlowState NewState)
 	return ExecuteTransition(NewState, ETransitionExecutionMode::Normal);
 }
 
+//Called in a AProtoGameMode, this is made so some Gamemodes that don't start at main menu simply start at gameplay
+void UCouchGameFlowSubsystem::OnGameModeBeginPlay(AProtoGameMode* GM)
+{
+	if (!GM->StartWithMainMenu)
+	{
+		ExecuteTransition(ECouchGameFlowState::Gameplay, ETransitionExecutionMode::DirectGameplay);
+	}
+}
+
 

@@ -15,6 +15,10 @@ class COUCHGAME_API AProtoGameHUD : public AHUD
 {
 	GENERATED_BODY()
 	
+public:
+	UPROPERTY(BlueprintReadOnly)
+	bool bShowMinigame = true;
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -22,6 +26,6 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Couch|GameFlow")
 	void RequestTransitionToState(ECouchGameFlowState NewState);
 	
-	UPROPERTY()
-	UCouchGameFlowSubsystem* CouchGameFlowSubsystem;
+	UPROPERTY(Transient)
+	TObjectPtr<UCouchGameFlowSubsystem> CouchGameFlowSubsystem;
 };
