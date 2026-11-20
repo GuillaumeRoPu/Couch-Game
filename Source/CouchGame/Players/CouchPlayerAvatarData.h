@@ -36,7 +36,10 @@ public:
 	FLinearColor DropShadowColor;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet powers used by this player avatar"))
-	E_MagnetPowerType MagnetPowerType;
+	E_MagnetPowerType MagnetPowerType = E_MagnetPowerType::ATTRACT;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet collision used by this player avatar"))
+	E_MagnetCollisionType CollisionType = E_MagnetCollisionType::SPHERE_TRACE;
 
 	// Loads the soft reference of the Icon Texture2D for this player
 	UFUNCTION(BlueprintCallable, Category = "Avatar|Presentation")
