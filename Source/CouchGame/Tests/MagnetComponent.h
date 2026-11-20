@@ -60,11 +60,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
 	TArray<TSubclassOf<AActor>> TargetClasses;
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(ClampMin = 0))
 	float Power = 20.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
-	bool isPowerConstant = false;
+	bool isForceConstant = false;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	bool Burst = false;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(ClampMin = 0, EditConditionHides, EditCondition="Burst == true"))
+	float Timer = 0.0f;
 	
 	UPROPERTY(BlueprintReadWrite)
 	FVector ActionDirection = FVector(0.0f, 0.0f, 0.0f);

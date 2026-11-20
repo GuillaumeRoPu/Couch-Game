@@ -123,7 +123,7 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				{
 					MagnetComponent->PowerType = Avatar->PowerType;
 					MagnetComponent->CollisionType = Avatar->CollisionType;
-
+					
 					switch (Avatar->CollisionType)
 					{
 						case E_MagnetCollisionType::CONE_TRACE:
@@ -140,7 +140,13 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 					}
 					
 					MagnetComponent->Power = Avatar->Power;
-					MagnetComponent->isPowerConstant = Avatar->isPowerConstant;
+					MagnetComponent->isForceConstant = Avatar->isForceConstant;
+					
+					MagnetComponent->Burst = Avatar->Burst;
+					if (Avatar->Burst)
+					{
+						MagnetComponent->Timer = Avatar->Timer;
+					}
 				}
 				if (UDecalComponent* DecalComponent = Character->GetComponentByClass<UDecalComponent>())
 				{
