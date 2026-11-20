@@ -8,6 +8,7 @@ void UCouchGameViewportClient::Init(FWorldContext& WorldContext, UGameInstance* 
 {
 	Super::Init(WorldContext, OwningGameInstance, bCreateNewAudioDevice);
 	LobbySubsystem = OwningGameInstance ? OwningGameInstance->GetSubsystem<UCouchLobbySubsystem>() : nullptr;
+	GameFlowSubsystem = OwningGameInstance ? OwningGameInstance->GetSubsystem<UCouchGameFlowSubsystem>() : nullptr;
 	
 	EnsureSchemeKeysBuilt();
 }
@@ -15,6 +16,14 @@ void UCouchGameViewportClient::Init(FWorldContext& WorldContext, UGameInstance* 
 // Override. Called on EVERY Key input. Here, we filter through all inputs to find only the ones we want from the schemes we implemented in dev settings. Once they're filtered, we send the appropriate schemes to the lobby so each scheme can get claimed.
 bool UCouchGameViewportClient::InputKey(const FInputKeyEventArgs& EventArgs)
 {
+	if (IsKeyboardRoutingKey(EventArgs.Key))
+	{
+		InputSubsystem->OnKeyboardInput.Broadcast();
+	}
+	if (EventArgs.Key.IsGamepadKey())
+	{
+		InputSubsystem->OnGamepadInput.Broadcast();
+	}
 	EnsureSchemeKeysBuilt();
 	if (RouteKeyboardInput(EventArgs)) return true;
 	if (EventArgs.Key.IsGamepadKey() && !EventArgs.Key.IsButtonAxis() && RouteGamepadInput(EventArgs, true)) return true;
@@ -61,7 +70,7 @@ bool UCouchGameViewportClient::RouteKeyboardInput(const FInputKeyEventArgs& Even
 
 		if (APlayerController* PlayerController = LobbySubsystem->GetPlayerControllerForScheme(Scheme))
 		{
-			if (!LobbySubsystem->IsJoiningOpen())
+			if (GameFlowSubsystem->GetCurrentState() == ECouchGameFlowState::Gameplay)
 			{
 				return RouteInputToController(PlayerController, EventArgs);
 			}
@@ -69,7 +78,6 @@ bool UCouchGameViewportClient::RouteKeyboardInput(const FInputKeyEventArgs& Even
 
 		return LobbySubsystem->NotifyKeyboardSchemeInput(Scheme, EventArgs.Key, EventArgs.InputDevice);
 	}
-
 	return false;
 }
 
