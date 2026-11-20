@@ -35,12 +35,47 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Presentation", meta = (ToolTip = "Color for the drop shadow of the avatar"))
 	FLinearColor DropShadowColor;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet powers used by this player avatar"))
-	E_MagnetPowerType MagnetPowerType = E_MagnetPowerType::ATTRACT;
+	//Power of Attraction and Repulsion
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision")
+	E_MagnetCollisionType CollisionType = E_MagnetCollisionType::COLLISION;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (ToolTip = "Magnet collision used by this player avatar"))
-	E_MagnetCollisionType CollisionType = E_MagnetCollisionType::SPHERE_TRACE;
-
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::CONE_TRACE"))
+	float Height = 100.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::CONE_TRACE"))
+	float DistanceFront = 100.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::CONE_TRACE"))
+	float DistanceFrontSides = 100.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::CONE_TRACE"))
+	float DistanceBackSides = 100.0f;
+	
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Collision", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::SPHERE_TRACE"))
+	float Radius = 100.0f;
+	
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	E_MagnetPowerType PowerType = E_MagnetPowerType::REPULSE;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
+	TArray<TSubclassOf<AActor>> TargetClasses;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(ClampMin = 0))
+	float Power = 20.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	bool isForceConstant = false;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	bool Burst = false;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(ClampMin = 0, EditConditionHides, EditCondition="Burst == true"))
+	float Timer = 0.0f;
+	
+	
 	// Loads the soft reference of the Icon Texture2D for this player
 	UFUNCTION(BlueprintCallable, Category = "Avatar|Presentation")
 	UTexture2D* LoadIconTexture() const;

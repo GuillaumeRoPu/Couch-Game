@@ -46,6 +46,8 @@ void AProtoGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	GetGameInstance()->GetSubsystem<UCouchGameFlowSubsystem>()->OnGameModeBeginPlay(this);
+	
 	if (UGameInstance* GameInstance = GetGameInstance())
 	{
 		if (UCouchLobbySubsystem* LobbySubsystem = GameInstance->GetSubsystem<UCouchLobbySubsystem>())
@@ -121,8 +123,32 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				}
 				if (UMagnetComponent* MagnetComponent = Character->GetComponentByClass<UMagnetComponent>())
 				{
-					MagnetComponent->PowerType = Avatar->MagnetPowerType;
+					MagnetComponent->PowerType = Avatar->PowerType;
 					MagnetComponent->CollisionType = Avatar->CollisionType;
+					
+					switch (Avatar->CollisionType)
+					{
+						case E_MagnetCollisionType::CONE_TRACE:
+							MagnetComponent->Height = Avatar->Height;
+							MagnetComponent->DistanceFront = Avatar->DistanceFront;
+							MagnetComponent->DistanceFrontSides = Avatar->DistanceFrontSides;
+							MagnetComponent->DistanceBackSides = Avatar->DistanceBackSides;
+						
+						case E_MagnetCollisionType::SPHERE_TRACE:
+							MagnetComponent->Radius = Avatar->Radius;
+					
+						case E_MagnetCollisionType::COLLISION:
+							MagnetComponent->TargetClasses = Avatar->TargetClasses;
+					}
+					
+					MagnetComponent->Power = Avatar->Power;
+					MagnetComponent->isForceConstant = Avatar->isForceConstant;
+					
+					MagnetComponent->Burst = Avatar->Burst;
+					if (Avatar->Burst)
+					{
+						MagnetComponent->Timer = Avatar->Timer;
+					}
 				}
 				if (UDecalComponent* DecalComponent = Character->GetComponentByClass<UDecalComponent>())
 				{

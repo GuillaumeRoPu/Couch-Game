@@ -12,7 +12,6 @@ class AProtoCharacter;
 UENUM(BlueprintType)
 enum class RespawnType : uint8
 {
-	OnBaseRespawn,
 	OnPlayer,
 	OnCheckPoint
 };
@@ -35,7 +34,7 @@ public:
 	bool bRespawnOnDeath = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Couch|Players")
-	RespawnType RespawnAtRandomPlayerStart = RespawnType::OnBaseRespawn;
+	RespawnType RespawnAtRandomPlayerStart = RespawnType::OnPlayer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Couch|Players", meta = (ClampMin = "0.0", EditCondition = "bRespawnOnDeath"))
 	float RespawnDelay = 1.0f;
@@ -47,6 +46,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Couch|EditorOnly")
 	bool bConnectOnEditor = false;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Couch|EditorOnly")
+	bool StartWithMainMenu = true;
+	
 	UFUNCTION()
 	void OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context);
 	
@@ -55,9 +57,9 @@ protected:
 	
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	
-	/* Called whenever the player finishes spawning, we use it  */
+	//Called whenever the player has finished its restart
 	virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;
 	
-	/* Destroys the dead pawn and restarts the controller after the respawn delay. */
+	//Dead pawn gets disconnected with player controller
 	void CreateNewPlayer(AController* PlayerController);
 };
