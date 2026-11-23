@@ -4,6 +4,8 @@
 #include "CouchLobbySubsystem.h"
 
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/GameModeBase.h"
+#include "Kismet/GameplayStatics.h"
 
 
 DEFINE_LOG_CATEGORY_STATIC(LogCouchLobby, Log, All);
@@ -31,7 +33,7 @@ bool UCouchLobbySubsystem::TryClaimInputSource(ECouchInputScheme Scheme, const F
 		return false;
 	}
 	
-	ClaimPlayerIndex(OutCouchPlayerIndex, Scheme, Key, DeviceId);
+	ClaimPlayerIndex(OutCouchPlayerIndex, Scheme, Key, DeviceId, true);
 	
 	return true;
 }
@@ -74,6 +76,17 @@ bool UCouchLobbySubsystem::ClaimNextUnassignedLocalPlayer(ULocalPlayer* LocalPla
 	if (!LocalPlayer)
 	{
 		return false;
+	}
+	
+	//REMOVE IF DOESNT WORK
+	for (const TPair<int32, TWeakObjectPtr<ULocalPlayer>>& Pair : PlayerIndexLocalPlayers)
+	{
+		if (Pair.Value.Get() == LocalPlayer)
+		{
+			ApplyInputMappingForPlayerIndex(Pair.Key, LocalPlayer);
+			OutCouchPlayerIndex = Pair.Key;
+			return true;
+		}
 	}
 
 	for (int32 CouchPlayerIndex = 0; CouchPlayerIndex < MaximumCouchPlayers; ++CouchPlayerIndex)
@@ -163,7 +176,7 @@ int32 UCouchLobbySubsystem::GetJoinedPlayerCount() const
 }
 
 //Claims the player at given index, then sets its player info based on given info to store it into JoinedPlayers, then broadcasts OnCouchPlayerJoined. Only use on its own when you know what you're doing.
-void UCouchLobbySubsystem::ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId)
+void UCouchLobbySubsystem::ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId, bool bCreateLocalPlayer)
 {
 	ClaimedPlayerIndices.Add(CouchPlayerIndex);
 
@@ -184,6 +197,19 @@ void UCouchLobbySubsystem::ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputS
 	JoinedPlayers.Add(CouchPlayerIndex, PlayerInfo);
 
 	UE_LOG(LogCouchLobby, Log, TEXT("Player joined - CouchPlayerIndex=%d, Scheme=%d, Key=%s, DeviceId=%d, Avatar=%s"), CouchPlayerIndex, static_cast<int32>(Scheme), *Key.ToString(), DeviceId, PlayerInfo.Avatar ? *PlayerInfo.Avatar->GetName() : TEXT("None"));
+	if (bCreateLocalPlayer)
+	{
+		if (!UGameplayStatics::GetPlayerController(GetWorld(), CouchPlayerIndex))
+		{
+			UGameplayStatics::CreatePlayer(GetWorld(), CouchPlayerIndex, true);
+		}
+		else
+		{
+			APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), CouchPlayerIndex);
+			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Purple, TEXT("Went here"));
+			UGameplayStatics::GetGameMode(GetWorld())->RestartPlayer(PC);
+		}
+	}
 	OnCouchPlayerJoined.Broadcast(CouchPlayerIndex, Scheme, SchemeMapping, Key, DeviceId, PlayerInfo.Avatar.Get());
 }
 
@@ -228,10 +254,10 @@ bool UCouchLobbySubsystem::EnsurePIEPlayers()
 	UE_LOG(LogCouchLobby, Warning, TEXT("[PIE DIRECT START] Creating fake inputs for editor testing: synthetic KeyboardA -> Player1 and KeyboardB -> Player2 joins will be created. No physical input was received."));
 
 	ClaimedKeyboardSchemes.Add(ECouchInputScheme::KeyboardA);
-	ClaimPlayerIndex(0, ECouchInputScheme::KeyboardA, FKey(), INDEX_NONE);
+	ClaimPlayerIndex(0, ECouchInputScheme::KeyboardA, FKey(), INDEX_NONE, false);
 
 	ClaimedKeyboardSchemes.Add(ECouchInputScheme::KeyboardB);
-	ClaimPlayerIndex(1, ECouchInputScheme::KeyboardB, FKey(), INDEX_NONE);
+	ClaimPlayerIndex(1, ECouchInputScheme::KeyboardB, FKey(), INDEX_NONE, false);
 
 	return GetJoinedPlayerCount() >= 2;
 }

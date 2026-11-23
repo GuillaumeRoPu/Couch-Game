@@ -58,7 +58,6 @@ void AProtoGameMode::BeginPlay()
 				// -1 lets the engine assign the next available controller id. Controller id and
 				// Couch player index are independent, the lobby ties a local player to a Couch
 				// slot, not this id, so it doesn't matter which id lands where.
-				UGameplayStatics::CreatePlayer(GetWorld(), -1, true);
 			}
 		}
 	}
@@ -91,6 +90,8 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 			{
 				return;
 			}
+			
+			
 
 			int32 CouchPlayerIndex = INDEX_NONE;
 			if (LobbySubsystem->ClaimNextUnassignedLocalPlayer(PlayerController->GetLocalPlayer(), CouchPlayerIndex))

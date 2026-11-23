@@ -58,7 +58,7 @@ private:
 	TSet<ECouchInputScheme> ClaimedKeyboardSchemes;
 	bool bJoiningOpen = false;
 	
-	void ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId);
+	void ClaimPlayerIndex(int32 CouchPlayerIndex, ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId, bool bCreateLocalPlayer);
 	int32 FindFreeCouchPlayerIndex() const;
 	bool TryClaimInputSource(ECouchInputScheme Scheme, const FKey& Key, int32 DeviceId, int32& OutCouchPlayerIndex);
 	

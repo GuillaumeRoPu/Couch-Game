@@ -17,7 +17,6 @@ void UCouchGameFlowSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	
 	//Request transition from None to MainMenu cuz first thing that appears is supposed to be the MainMenu
 	RequestTransition(ECouchGameFlowState::MainMenu);
-	RequestTransition(ECouchGameFlowState::FinalScreen);
 }
 
 //Reset the pointers from initialize
@@ -57,12 +56,13 @@ bool UCouchGameFlowSubsystem::ExecuteTransition(ECouchGameFlowState NewState, ET
 {
 	if (Mode == ETransitionExecutionMode::Normal && !IsTransitionAllowed(CurrentState, NewState))
 	{
-		UE_LOG(LogCouchGameFlow, Warning, TEXT("Rejected flow transition %s -> %s"), *UEnum::GetValueAsString(CurrentState), *UEnum::GetValueAsString(NewState));
+		UE_LOG(LogCouchGameFlow, Warning, TEXT("Rejected flow transition : %s -> %s"), *UEnum::GetValueAsString(CurrentState), *UEnum::GetValueAsString(NewState));
 		return false;
 	}
 
 	const ECouchGameFlowState OldState = CurrentState;
 	CurrentState = NewState;
+	UE_LOG(LogCouchGameFlow, Warning, TEXT("Changed state : %s -> %s"), *UEnum::GetValueAsString(OldState), *UEnum::GetValueAsString(NewState));
 	OnGameFlowStateChanged.Broadcast(OldState, NewState);
 	
 	return true;
@@ -77,7 +77,7 @@ bool UCouchGameFlowSubsystem::RequestTransition(ECouchGameFlowState NewState)
 //Called in a AProtoGameMode, this is made so some Gamemodes that don't start at main menu simply start at gameplay
 void UCouchGameFlowSubsystem::OnGameModeBeginPlay(AProtoGameMode* GM)
 {
-	if (!GM->StartWithMainMenu)
+	if (!GM->StartWithMainMenu || GM->bConnectOnEditor)
 	{
 		ExecuteTransition(ECouchGameFlowState::Gameplay, ETransitionExecutionMode::DirectGameplay);
 	}
