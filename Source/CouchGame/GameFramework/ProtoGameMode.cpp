@@ -6,7 +6,6 @@
 #include "ProtoGameHUD.h"
 #include "Backend/Subsystem/CouchLobbySubsystem.h"
 #include "Components/DecalComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Players/ProtoPlayerState.h"
 #include "Players/ProtoPlayerController.h"
@@ -42,6 +41,11 @@ void AProtoGameMode::InitGame(const FString& MapName, const FString& Options, FS
 #endif
 }
 
+void AProtoGameMode::HUDSpawned()
+{
+	bHUDAlreadySpawned = true;
+}
+
 void AProtoGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -69,7 +73,7 @@ void AProtoGameMode::BeginPlay()
 void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
 {
 	Super::FinishRestartPlayer(NewPlayer, StartRotation);
-
+	
 	if (APlayerController* PlayerController = Cast<APlayerController>(NewPlayer))
 	{
 		if (AProtoCharacter* Character = Cast<AProtoCharacter>(PlayerController->GetPawn()))

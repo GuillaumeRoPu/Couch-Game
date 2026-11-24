@@ -243,6 +243,16 @@ APlayerController* UCouchLobbySubsystem::GetPlayerControllerForGamepadDevice(int
 	return nullptr;
 }
 
+void UCouchLobbySubsystem::ResetJoins()
+{
+	JoinedPlayers.Reset();
+	PlayerIndexLocalPlayers.Reset();
+	GamepadDeviceToPlayerIndex.Reset();
+	ClaimedPlayerIndices.Reset();
+	ClaimedKeyboardSchemes.Reset();
+	UE_LOG(LogCouchLobby, Log, TEXT("CouchLobbySubsystem join state reset."));
+}
+
 #if WITH_EDITOR
 bool UCouchLobbySubsystem::EnsurePIEPlayers()
 {
@@ -258,6 +268,14 @@ bool UCouchLobbySubsystem::EnsurePIEPlayers()
 
 	ClaimedKeyboardSchemes.Add(ECouchInputScheme::KeyboardB);
 	ClaimPlayerIndex(1, ECouchInputScheme::KeyboardB, FKey(), INDEX_NONE, false);
+	
+	for (int32 PlayerIndex = 0; PlayerIndex < 2; ++PlayerIndex)
+	{
+		if (!UGameplayStatics::GetPlayerController(GetWorld(), PlayerIndex))
+		{
+			UGameplayStatics::CreatePlayer(GetWorld(), PlayerIndex, true);
+		}
+	}
 
 	return GetJoinedPlayerCount() >= 2;
 }

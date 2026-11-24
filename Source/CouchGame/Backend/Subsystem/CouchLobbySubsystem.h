@@ -99,9 +99,12 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Couch|Lobby")
 	FOnCouchPlayerJoined OnCouchPlayerJoined;
 	
+	UFUNCTION(BlueprintCallable, Category = "Couch|Lobby")
+	void ResetJoins();
+	
 	bool NotifyGamepadInput(const FKey& Key, FInputDeviceId Device);
 	APlayerController* GetPlayerControllerForGamepadDevice(int32 DeviceId) const;
-	UCouchPlayerAvatarData* GetAvatarForPlayerIndex(int32 PartyPlayerIndex) const;
+	UCouchPlayerAvatarData* GetAvatarForPlayerIndex(int32 CouchPlayerIndex) const;
 	
 #if WITH_EDITOR
 	bool EnsurePIEPlayers();

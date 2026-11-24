@@ -52,6 +52,12 @@ public:
 	UFUNCTION()
 	void OnPlayerDied(ACharacter* Character, AController* DamageInstigator, AActor* DamageCauser, FCouchDamageContext Context);
 	
+	UFUNCTION(BlueprintCallable, Category = "Couch|HUD")
+	bool IsHUDAlreadySpawned() { return bHUDAlreadySpawned; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Couch|HUD")
+	void HUDSpawned();
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -62,4 +68,6 @@ protected:
 	
 	//Dead pawn gets disconnected with player controller
 	void CreateNewPlayer(AController* PlayerController);
+	
+	bool bHUDAlreadySpawned = false;
 };
