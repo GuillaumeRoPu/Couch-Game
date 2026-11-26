@@ -20,6 +20,15 @@ enum class E_MagnetCollisionType : uint8 {
 	SPHERE_TRACE = 2  UMETA(DisplayName = "SPHERE_TRACE"),
 };
 
+UENUM(BlueprintType)
+enum class E_ForceDirection : uint8 {
+	DEFAULT_CONTROLLED = 0 UMETA(DisplayName = "DEFAULT_CONTROLLED"),
+	DEFAULT_UNCONTROLLED = 1 UMETA(DisplayName = "DEFAULT_UNCONTROLLED"),
+	FRONTWARD = 2  UMETA(DisplayName = "FRONTWARD"),
+	RIGHTWARD = 3 UMETA(DisplayName = "RIGHTWARD"),
+	UPWARD = 4 UMETA(DisplayName = "UPWARD"),
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable )
 class COUCHGAME_API UMagnetComponent : public USceneComponent
 {
@@ -57,6 +66,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	E_MagnetPowerType PowerType = E_MagnetPowerType::REPULSE;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	E_ForceDirection ForceDirection = E_ForceDirection::DEFAULT_UNCONTROLLED;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
 	TArray<TSubclassOf<AActor>> TargetClasses;
 	
@@ -71,10 +83,11 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(ClampMin = 0, EditConditionHides, EditCondition="Burst == true"))
 	float Timer = 0.0f;
-	
-	UPROPERTY(BlueprintReadWrite)
-	FVector ActionDirection = FVector(0.0f, 0.0f, 0.0f);
 
+	
+	UFUNCTION(BlueprintCallable, Category="Power")
+	FVector SetForceDirection(FVector MovingObjLoc, FTransform center, float force);
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

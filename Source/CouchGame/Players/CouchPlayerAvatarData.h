@@ -60,6 +60,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
 	E_MagnetPowerType PowerType = E_MagnetPowerType::REPULSE;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power")
+	E_ForceDirection ForceDirection = E_ForceDirection::DEFAULT_UNCONTROLLED;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Power", meta=(EditConditionHides, EditCondition="CollisionType == E_MagnetCollisionType::COLLISION"))
 	TArray<TSubclassOf<AActor>> TargetClasses;
 	

@@ -125,6 +125,7 @@ void AProtoGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator&
 				{
 					MagnetComponent->PowerType = Avatar->PowerType;
 					MagnetComponent->CollisionType = Avatar->CollisionType;
+					MagnetComponent->ForceDirection = Avatar->ForceDirection;
 					
 					switch (Avatar->CollisionType)
 					{
